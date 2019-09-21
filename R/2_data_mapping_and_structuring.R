@@ -4,6 +4,10 @@ library(tidyverse)
 locality <- readRDS("./data/locality.rds")
 waterSample <- readRDS("./data/waterSample.rds")
 extraction <- readRDS("./data/extraction.rds")
+amplification <- readRDS("./data/amplification.rds")
+sequencing <- readRDS("./data/sequencing.rds")
+occurrence <- readRDS("./data/occurrence.rds")
+sequence <- readRDS("./data/sequence.rds")
 
 
 #.....................................................
@@ -14,12 +18,14 @@ extraction <- readRDS("./data/extraction.rds")
 # 1a) de-normalizing and extracting fields that should go to the event core 
 
 location_and_waterSample_to_Event_core <- left_join(waterSample,locality)
+
 extraction_to_event_core <- extraction %>% 
   select(eventID,
          parentEventID,
-         fieldNumber=extractionNumber,
-         samplingProtocol=extractionMethod)
+         fieldNumber = extractionNumber,
+         samplingProtocol = extractionMethod)
 
+ 
 # ...... 
 
 event_core_take1 <- bind_rows(location_and_waterSample_to_Event_core,extraction_to_event_core)
