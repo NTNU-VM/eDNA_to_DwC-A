@@ -3,10 +3,13 @@
 library(googlesheets)
 library(readxl)
 
-# register worksheet (worksheet is public, but key needed)
-eDNA_sheet <- gs_key("1uVWOxjJZo0v4uS5L6h8F-1sV5zNs7L_v7g1pSE_o8mY")
+# register worksheet (GA - temp: the gs_key method below doesn't work for me)
+eDNA_sheet <- gs_title("GBIF eDNA record format")
 
-# Download entire Google Sheet as xlsx, create folder /data if neccerry
+# register worksheet (worksheet is public, but key needed)
+# eDNA_sheet <- gs_key("1uVWOxjJZo0v4uS5L6h8F-1sV5zNs7L_v7g1pSE_o8mY")
+
+# Download entire Google Sheet as xlsx, create folder /data if necessary
 dir.create("/data",showWarnings = FALSE)
 dataFile <- "./data/eDNA_Data.xlsx"
 gs_download(eDNA_sheet, NULL, dataFile, TRUE, TRUE)
@@ -21,7 +24,7 @@ extraction <- read_excel(dataFile, sheet = "extraction")
 amplification <- read_excel(dataFile, sheet = "amplification")
 sequencing <- read_excel(dataFile, sheet = "sequencing")
 occurrence <- read_excel(dataFile, sheet = "occurrence")
-sequence <- read_excel(dataFile, sheet = "sequenceAVS")
+sequence <- read_excel(dataFile, sheet = "sequence_AVS")
 
 # save files to local cache
 dir.create("./data",showWarnings=FALSE)
