@@ -22,16 +22,20 @@ sequence <- readRDS("./data/sequence.rds")
 # stripped out duplicates from locality table to make this join work. Needs tweaked if there are to be duplicates.
 location_and_waterSample_to_Event_core <- left_join(waterSample,locality)
 
-# save step as file for checking
-intermediate_step <- data.frame(location_and_waterSample_to_Event_core)
-write.xlsx(intermediate_step, file="./data/location_and_waterSample_to_Event_core__left.xlsx", 
+# save step as file for testing
+combinedTables <- data.frame(location_and_waterSample_to_Event_core)
+write.xlsx(combinedTables, 
+           file="./data/location_and_waterSample_to_Event_core.xlsx", 
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
+# This xlsx file maps well to the DwC-A core Event
+# see https://data.gbif.no/ipt-test/manage/resource?r=ga-test-7
+# Only one field (sampleNumber) left unmapped; sampleNumber is embedded as the 2nd element in fieldNumber.
+
+# Alternative joins and method
 #location_and_waterSample_to_Event_core <- inner_join(waterSample,locality)
 #location_and_waterSample_to_Event_core <- right_join(waterSample,locality)
 #location_and_waterSample_to_Event_core <- full_join(waterSample,locality)
-
-# Alternative join method
 # merge(waterSample,locality, by = by.x = "locality", by.y = "locality",
 #       by.x = by, by.y = by, all = FALSE, all.x = all, all.y = all,
 #       sort = TRUE, suffixes = c(".x",".y"), no.dups = TRUE,
@@ -45,7 +49,7 @@ write.xlsx(intermediate_step, file="./data/location_and_waterSample_to_Event_cor
 #          samplingProtocol = extractionMethod,
 #          everything())
 
-# save step as file for checking
+# save step as file for testing
 write.xlsx(data.frame(extraction), file="./data/extraction_to_event_core.xlsx", 
            sheetName = "extraction", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
@@ -58,14 +62,36 @@ event_core_take1 <- bind_rows(location_and_waterSample_to_Event_core,extraction_
 event_core_take1 <- event_core_take1 %>% 
   select(eventID,parentEventID,locality,eventDate,samplingProtocol)
 
+
+
 # 2) creating the occurrence extention
 
 
+#location_and_waterSample_to_Event_core <- left_join(waterSample,locality)
+
+# save step as file for testing
+#combinedTables <- data.frame(location_and_waterSample_to_Event_core)
+
+# Save occurrence table for testing
+# as-is
+write.xlsx(data.frame(occurrence), 
+           file="./data/occurrence.xlsx", 
+           sheetName = "occurrence", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+#After removing all "No match" rows.
+matchingOccurrences <- occurrence %>% filter(!str_detect(matchingScientificName, "No match"))
+#head(matchingOccurrences)
+
+write.xlsx(data.frame(matchingOccurrences), 
+           file="./data/matchingOccurrences.xlsx", 
+           sheetName = "occurrence", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
 #.....................................................
-# 2-a. mapping to eMoF extantions
+# 2-a. mapping to eMoF extentions
 #-------------------------------------------------------
 
 #.....................................................
-# 2-a. mapping to GGBN extantions .... 
+# 2-a. mapping to GGBN extentions .... 
 #-------------------------------------------------------
 
