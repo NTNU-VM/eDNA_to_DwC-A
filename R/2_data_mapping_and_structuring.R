@@ -56,7 +56,7 @@ write.xlsx(data.frame(extraction), file="./data/extraction_to_event_core.xlsx",
  
 # ...... 
 
-event_core_take1 <- bind_rows(location_and_waterSample_to_Event_core,extraction_to_event_core)
+# event_core_take1 <- bind_rows(location_and_waterSample_to_Event_core,extraction_to_event_core)
 
 # 1b) reorder columns
 event_core_take1 <- event_core_take1 %>% 
@@ -93,11 +93,19 @@ write.xlsx(data.frame(matchingOccurrences),
 extraction_and_amplification <- left_join(extraction, amplification, by = c("extractionNumber" = "fk_extractionNumber"))
 
 # save step as file for testing
-combinedTables <- data.frame(extraction_and_amplification)
-count(combinedTables)
-write.xlsx(combinedTables, 
-           file="./data/extraction_and_amplification.xlsx", 
-           sheetName = "extraction_&_amplification", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+# combinedTables <- data.frame(extraction_and_amplification)
+# count(combinedTables)
+# write.xlsx(combinedTables, 
+#            file="./data/extraction_and_amplification.xlsx", 
+#            sheetName = "extraction_&_amplification", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+# extractions have to be registered as events, so merge extraction_and_amplification with Event core table
+extraction_and_amplification_to_Event_core <- right_join(location_and_waterSample_to_Event_core, 
+                                                        extraction_and_amplification)
+count(extraction_and_amplification_to_Event_core)
+write.xlsx(combinedTables,
+           file="./data/extraction_and_amplification_to_Event_core.xlsx",
+           sheetName = "location-to-amplification", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 
 #.....................................................
