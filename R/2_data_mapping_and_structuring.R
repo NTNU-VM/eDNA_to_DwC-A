@@ -19,14 +19,75 @@ sequence <- readRDS("./data/sequence.rds")
 # 1) creating the event-core
 # 1a) de-normalizing and extracting fields that should go to the event core 
 
+## Add locality to waterSample ##
 # stripped out duplicates from locality table to make this join work. Needs tweaked if there are to be duplicates.
-location_and_waterSample_to_Event_core <- left_join(waterSample,locality)
+locality_waterSample <- left_join(waterSample,locality)
+count(locality_waterSample)
 
 # save step as file for testing
-combinedTables <- data.frame(location_and_waterSample_to_Event_core)
-write.xlsx(combinedTables, 
-           file="./data/location_and_waterSample_to_Event_core.xlsx", 
+combined_tables <- data.frame(locality_waterSample)
+write.xlsx(combined_tables, file="./data/1_locality_waterSample.xlsx", 
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+## Now add extraction ##
+all_and_extraction <- left_join(locality_waterSample, extraction, 
+                                by = c("eventID" = "parentEventID"))
+count(all_and_extraction)
+
+combinedTables <- data.frame(all_and_extraction)
+write.xlsx(combinedTables, 
+           file="./data/2_all_and_extraction.xlsx", 
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+## Now add amplification ##
+all_and_amplification <- left_join(all_and_extraction, amplification, 
+                                   by = c("extractionNumber" = "fk_extractionNumber"))
+count(all_and_amplification)
+
+combined_tables <- data.frame(all_and_amplification)
+write.xlsx(combined_tables, 
+           file="./data/3_all_and_amplification.xlsx", 
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+## Now add sequencing ##
+all_and_sequencing <- left_join(all_and_amplification, sequencing, 
+                                by = c("amplificationNumber" = "fk_amplificationNumber"))
+count(all_and_sequencing)
+
+combined_tables <- data.frame(all_and_sequencing)
+write.xlsx(combined_tables, 
+           file="./data/4_all_and_sequencing.xlsx", 
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+## Now add occurrence ##
+all_and_occurrence <- left_join(all_and_sequencing, occurrence, 
+                                by = c("sequencingNumber" = "fk_sequencingNumber"))
+count(all_and_occurrence)
+
+combined_tables <- data.frame(all_and_occurrence)
+write.xlsx(combined_tables, 
+           file="./data/5_all_and_occurrence.xlsx", 
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+## Now add sequence_AVS ##
+all_and_sequence <- left_join(all_and_occurrence, sequence, 
+                                by = "sequenceNumber")
+count(all_and_sequence)
+
+combined_tables <- data.frame(all_and_sequence)
+write.xlsx(combined_tables, 
+           file="./data/6_all_and_sequence.xlsx", 
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+# ignore below for now..
+
+
+
 
 # This xlsx file maps well to the DwC-A core Event
 # see https://data.gbif.no/ipt-test/manage/resource?r=ga-test-7

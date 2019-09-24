@@ -4,7 +4,7 @@ library(googlesheets)
 library(readxl)
 
 # register worksheet (GA - temp: the gs_key method below doesn't work for me)
-eDNA_sheet <- gs_title("GBIF eDNA record format")
+eDNA_sheet <- gs_title("GBIF eDNA record format - modified")
 
 # register worksheet (worksheet is public, but key needed)
 # eDNA_sheet <- gs_key("1uVWOxjJZo0v4uS5L6h8F-1sV5zNs7L_v7g1pSE_o8mY")
