@@ -88,6 +88,19 @@ write.xlsx(data.frame(matchingOccurrences),
 
 
 #.....................................................
+# 2. mapping to extentions
+#-------------------------------------------------------
+extraction_and_amplification <- left_join(extraction, amplification, by = c("extractionNumber" = "fk_extractionNumber"))
+
+# save step as file for testing
+combinedTables <- data.frame(extraction_and_amplification)
+count(combinedTables)
+write.xlsx(combinedTables, 
+           file="./data/extraction_and_amplification.xlsx", 
+           sheetName = "extraction_&_amplification", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+#.....................................................
 # 2-a. mapping to eMoF extentions
 #-------------------------------------------------------
 
