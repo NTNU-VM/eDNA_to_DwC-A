@@ -9,7 +9,7 @@ extraction <- readRDS("./data/extraction.rds")
 amplification <- readRDS("./data/amplification.rds")
 sequencing <- readRDS("./data/sequencing.rds")
 occurrence <- readRDS("./data/occurrence.rds")
-sequence <- readRDS("./data/sequence.rds")
+sequence_ASV <- readRDS("./data/sequence_ASV.rds")
 
 
 #.....................................................
@@ -20,7 +20,7 @@ sequence <- readRDS("./data/sequence.rds")
 # 1a) de-normalizing and extracting fields that should go to the event core 
 
 ## Add locality to waterSample ##
-# stripped out duplicates from locality table to make this join work. Needs tweaked if there are to be duplicates.
+# stripped out duplicates from locality table to make this join work. Needs tweaked if likely to be duplicates.
 locality_waterSample <- left_join(waterSample,locality)
 count(locality_waterSample)
 
@@ -74,14 +74,14 @@ write.xlsx(combined_tables,
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 
-## Now add sequence_AVS ##
-all_and_sequence <- left_join(all_and_occurrence, sequence, 
+## Now add sequence_ASV ##
+all_and_sequence_ASV <- left_join(all_and_occurrence, sequence_ASV, 
                                 by = "sequenceNumber")
-count(all_and_sequence)
+count(all_and_sequence_ASV)
 
-combined_tables <- data.frame(all_and_sequence)
+combined_tables <- data.frame(all_and_sequence_ASV)
 write.xlsx(combined_tables, 
-           file="./data/6_all_and_sequence.xlsx", 
+           file="./data/6_all_and_sequence_ASV.xlsx", 
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 # ignore below for now..
