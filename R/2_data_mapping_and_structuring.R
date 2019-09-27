@@ -74,7 +74,7 @@ write.xlsx(combined_tables,
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 
-## Now add sequence_AVS ##
+## Now add sequence_ASV ##
 all_and_sequence <- left_join(all_and_occurrence, sequence, 
                                 by = "sequenceNumber")
 count(all_and_sequence)
