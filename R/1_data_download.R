@@ -25,7 +25,7 @@ extraction <- read_excel(dataFile, sheet = "extraction")
 amplification <- read_excel(dataFile, sheet = "amplification")
 sequencing <- read_excel(dataFile, sheet = "sequencing")
 occurrence <- read_excel(dataFile, sheet = "occurrence")
-sequence_ASV <- read_excel(dataFile, sheet = "sequence_ASV")
+sequence <- read_excel(dataFile, sheet = "sequence_ASV")
 
 # save files to local cache
 dir.create("./data",showWarnings=FALSE)
@@ -35,6 +35,6 @@ saveRDS(extraction,"./data/extraction.rds")
 saveRDS(amplification,"./data/amplification.rds")
 saveRDS(sequencing,"./data/sequencing.rds")
 saveRDS(occurrence,"./data/occurrence.rds")
-saveRDS(sequence_ASV,"./data/sequence_ASV.rds")
+saveRDS(sequence,"./data/sequence.rds")
 
 #....
