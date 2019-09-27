@@ -28,4 +28,5 @@ tableSummary <- function(theTable, exclude, include){
   # print as data frame
   # columnSummary <- as.data.frame(columnSummary)
   # print.data.frame(columnSummary, max = NULL)
+  #..
 }
