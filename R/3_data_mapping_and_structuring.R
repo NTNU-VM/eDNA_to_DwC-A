@@ -14,6 +14,14 @@ sequencing <- readRDS("./data/sequencing.rds")
 occurrence <- readRDS("./data/occurrence.rds")
 sequence_ASV <- readRDS("./data/sequence_ASV.rds")
 
+# Prefix all column names with table names to avoid clashes.
+colnames(locality) <- paste("locality", colnames(locality), sep = ".")
+colnames(waterSample) <- paste("waterSample", colnames(waterSample), sep = ".")
+colnames(extraction) <- paste("extraction", colnames(extraction), sep = ".")
+colnames(amplification) <- paste("amplification", colnames(amplification), sep = ".")
+colnames(sequencing) <- paste("sequencing", colnames(sequencing), sep = ".")
+colnames(occurrence) <- paste("occurrence", colnames(occurrence), sep = ".")
+colnames(sequence_ASV) <- paste("sequence_ASV", colnames(sequence_ASV), sep = ".")
 
 
 #=========================================================================
@@ -28,28 +36,12 @@ sequence_ASV <- readRDS("./data/sequence_ASV.rds")
 tableSummary(locality)
 tableSummary(waterSample)
 
-# Rename locality fields before joining
-locality_rename <- locality %>%
-  select(locality_locality = locality,
-         everything())
-tableSummary(locality_rename)
-
-# Rename waterSample fields before joining
-waterSample_rename <- waterSample %>%
-  select(waterSample_eventId = eventID,
-         waterSample_fieldNumber = fieldNumber,
-         waterSample_locality = locality,
-         waterSample_materialSampleID = materialSampleID,
-         everything())
-tableSummary(waterSample_rename)
-
 # stripped out duplicates from locality table to make this join work. Needs tweaked if likely to be duplicates.
-locality_waterSample <- left_join(waterSample_rename,locality_rename,
-                                  by = c("waterSample_locality" = "locality_locality"))
+locality_waterSample <- left_join(waterSample,locality,
+                                  by = c("waterSample.localityID" = "locality.localityID"))
 
 # Joined table stats
 tableSummary(locality_waterSample)
-
 
 # save step as file for testing
 combined_tables <- data.frame(locality_waterSample)
@@ -63,17 +55,8 @@ write.xlsx(combined_tables, file="./data/1_locality_waterSample.xlsx",
 # Pre-join table stats
 tableSummary(extraction)
 
-# Rename fields before joining
-extraction_rename <- extraction %>%
-  select(extraction_eventId = eventID,
-         extraction_parentEventID = parentEventID,
-         extraction_fk_fieldNumber = fk_fieldNumber,
-         extraction_materialSampleID = materialSampleID,
-         everything())
-tableSummary(extraction_rename)
-
-all_and_extraction <- left_join(locality_waterSample, extraction_rename, 
-                                by = c("waterSample_fieldNumber" = "extraction_fk_fieldNumber"))
+all_and_extraction <- left_join(locality_waterSample, extraction, 
+                                by = c("waterSample.waterSampleID" = "extraction.waterSampleID"))
 # Joined table stats
 tableSummary(all_and_extraction)
 
@@ -84,75 +67,78 @@ write.xlsx(combinedTables,
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 
-## NEXT....
 
-# #-------------------------------------------------------
-# # 1c.  Add amplification
-# #-------------------------------------------------------
-# # Pre-join table stats
-# tableSummary(amplification)
-# 
-# all_and_amplification <- left_join(all_and_extraction, amplification,
-#                                    by = c("extractionNumber" = "fk_extractionNumber"))
-# # Joined table stats
-# tableSummary(all_and_amplification)
-# 
-# combined_tables <- data.frame(all_and_amplification)
-# write.xlsx(combined_tables, 
-#            file="./data/3_all_and_amplification.xlsx", 
-#            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
-# 
-# #-------------------------------------------------------
-# # 1d.  Add sequencing
-# #-------------------------------------------------------
-# # Pre-join table stats
-# tableSummary(sequencing)
-# 
-# all_and_sequencing <- left_join(all_and_amplification, sequencing, 
-#                                 by = c("amplificationNumber" = "fk_amplificationNumber"))
-# # Joined table stats
-# tableSummary(all_and_sequencing)
-# 
-# combined_tables <- data.frame(all_and_sequencing)
-# write.xlsx(combined_tables, 
-#            file="./data/4_all_and_sequencing.xlsx", 
-#            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
-# 
-# #-------------------------------------------------------
-# # 1e.  Add occurrence
-# #-------------------------------------------------------
-# # Pre-join table stats
-# tableSummary(occurrence)
-# 
-# all_and_occurrence <- left_join(all_and_sequencing, occurrence, 
-#                                 by = c("sequencingNumber" = "fk_sequencingNumber"))
-# # Joined table stats
-# tableSummary(all_and_occurrence)
-# 
-# combined_tables <- data.frame(all_and_occurrence)
-# write.xlsx(combined_tables, 
-#            file="./data/5_all_and_occurrence.xlsx", 
-#            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
-# 
-# #-------------------------------------------------------
-# # 1e.  Add sequence_ASV
-# #-------------------------------------------------------
-# # Pre-join table stats
-# tableSummary(sequence_ASV)
-# 
-# all_and_sequence_ASV <- left_join(all_and_occurrence, sequence_ASV, 
-#                                 by = "sequenceNumber")
-# # Joined table stats
-# tableSummary(all_and_sequence_ASV)
-# 
-# combined_tables <- data.frame(all_and_sequence_ASV)
-# write.xlsx(combined_tables, 
-#            file="./data/6_all_and_sequence_ASV.xlsx", 
-#            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
+
+#-------------------------------------------------------
+# 1c.  Add amplification
+#-------------------------------------------------------
+# Pre-join table stats
+tableSummary(amplification)
+
+all_and_amplification <- left_join(all_and_extraction, amplification,
+                                   by = c("waterSample.waterSampleID" = "amplification.waterSampleID"))
+# Joined table stats
+tableSummary(all_and_amplification)
+
+combined_tables <- data.frame(all_and_amplification)
+write.xlsx(combined_tables,
+           file="./data/3_all_and_amplification.xlsx",
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+#-------------------------------------------------------
+# 1d.  Add sequencing
+#-------------------------------------------------------
+# Pre-join table stats
+tableSummary(sequencing)
+
+all_and_sequencing <- left_join(all_and_amplification, sequencing,
+                                by = c("amplification.sequencingID" = "sequencing.sequencingID"))
+# Joined table stats
+tableSummary(all_and_sequencing)
+
+combined_tables <- data.frame(all_and_sequencing)
+write.xlsx(combined_tables,
+           file="./data/4_all_and_sequencing.xlsx",
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+#-------------------------------------------------------
+# 1e.  Add occurrence
+#-------------------------------------------------------
+# Pre-join table stats
+tableSummary(occurrence)
+
+all_and_occurrence <- left_join(all_and_sequencing, occurrence,
+                                by = c("amplification.sequencingID" = "occurrence.sequencingID"))
+# Joined table stats
+tableSummary(all_and_occurrence)
+
+combined_tables <- data.frame(all_and_occurrence)
+write.xlsx(combined_tables,
+           file="./data/5_all_and_occurrence.xlsx",
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+
+#-------------------------------------------------------
+# 1e.  Add sequence_ASV
+#-------------------------------------------------------
+# Pre-join table stats
+tableSummary(sequence_ASV)
+
+all_and_sequence_ASV <- left_join(all_and_occurrence, sequence_ASV,
+                                  by = c("occurrence.sequenceID" = "sequence_ASV.sequenceID"))
+# Joined table stats
+tableSummary(all_and_sequence_ASV)
+
+combined_tables <- data.frame(all_and_sequence_ASV)
+write.xlsx(combined_tables,
+           file="./data/6_all_and_sequence_ASV.xlsx",
+           sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+
 # # ignore below for now..
 # 
 # 
