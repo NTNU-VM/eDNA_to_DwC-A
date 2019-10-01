@@ -132,124 +132,210 @@ all_and_sequence_ASV <- left_join(all_and_occurrence, sequence_ASV,
 # Joined table stats
 tableSummary(all_and_sequence_ASV)
 
+# save as rds for use in next steps
+saveRDS(all_and_sequence_ASV,"./data/all_and_sequence_ASV.rds")
+
 combined_tables <- data.frame(all_and_sequence_ASV)
 write.xlsx(combined_tables,
            file="./data/6_all_and_sequence_ASV.xlsx",
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 
+#-------------------------------------------------------
+# 1f.  Now save as master file for next steps
+#-------------------------------------------------------
 
-# # ignore below for now..
-# 
-# 
-# 
-# 
-# # This xlsx file maps well to the DwC-A core Event
-# # see https://data.gbif.no/ipt-test/manage/resource?r=ga-test-7
-# # Only one field (sampleNumber) left unmapped; sampleNumber is embedded as the 2nd element in fieldNumber.
-# 
-# # Alternative joins and method
-# #location_and_waterSample_to_Event_core <- inner_join(waterSample,locality)
-# #location_and_waterSample_to_Event_core <- right_join(waterSample,locality)
-# #location_and_waterSample_to_Event_core <- full_join(waterSample,locality)
-# # merge(waterSample,locality, by = by.x = "locality", by.y = "locality",
-# #       by.x = by, by.y = by, all = FALSE, all.x = all, all.y = all,
-# #       sort = TRUE, suffixes = c(".x",".y"), no.dups = TRUE,
-# #       incomparables = NULL, ...)
-# 
-# 
-# # Rename fields before joining
-# extraction_to_event_core <- extraction %>%
-#   select(extraction_eventId = eventID,
-#          extraction_parentEventID = parentEventID,
-#          extraction_fk_fieldNumber = fk_fieldNumber,
-#          extraction_materialSampleID = materialSampleID,
-#          everything())
-# tableSummary(extraction)
-# tableSummary(extraction_to_event_core)
-# 
-# 
-# # save step as file for testing
-# write.xlsx(data.frame(extraction), file="./data/extraction_to_event_core.xlsx", 
-#            sheetName = "extraction", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
-#  
-# # ...... 
-# 
+flatDataMaster <- readRDS("./data/all_and_sequence_ASV.rds")
+
+## NEXT: 
+## Split main table into tables for each core/extension, and remove duplicate rows.
+## Extract fields which are to go into EMoFs.
+
+
+# ignore below for now..
+
+# This xlsx file maps well to the DwC-A core Event
+# see https://data.gbif.no/ipt-test/manage/resource?r=ga-test-7
+# Only one field (sampleNumber) left unmapped; sampleNumber is embedded as the 2nd element in fieldNumber.
+
+# Alternative join
+# merge(waterSample,locality, by = by.x = "locality", by.y = "locality",
+#       by.x = by, by.y = by, all = FALSE, all.x = all, all.y = all,
+#       sort = TRUE, suffixes = c(".x",".y"), no.dups = TRUE,
+#       incomparables = NULL, ...)
+
+
+
 # # event_core_take1 <- bind_rows(location_and_waterSample_to_Event_core,extraction_to_event_core)
 # 
 # # 1b) reorder columns
-# event_core_take1 <- event_core_take1 %>% 
+# event_core_take1 <- event_core_take1 %>%
 #   select(eventID,parentEventID,locality,eventDate,samplingProtocol)
 # 
-# 
-# 
-# # 2) creating the occurrence extention
-# 
-# 
-# #location_and_waterSample_to_Event_core <- left_join(waterSample,locality)
-# 
-# # save step as file for testing
-# #combinedTables <- data.frame(location_and_waterSample_to_Event_core)
-# 
-# # Save occurrence table for testing
-# # as-is
-# write.xlsx(data.frame(occurrence), 
-#            file="./data/occurrence.xlsx", 
-#            sheetName = "occurrence", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
-# #After removing all "No match" rows.
+# # removing all "No match" rows.
 # matchingOccurrences <- occurrence %>% filter(!str_detect(matchingScientificName, "No match"))
 # #head(matchingOccurrences)
-# 
-# write.xlsx(data.frame(matchingOccurrences), 
-#            file="./data/matchingOccurrences.xlsx", 
-#            sheetName = "occurrence", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
-# 
-# 
-# #=========================================================================
-# # 2. Split into tables for the occurrence core and each core extension
-# #=========================================================================
-# 
-# 
-# #-------------------------------------------------------
-# # 2a. Mapping to Occurrence Core
-# #-------------------------------------------------------
-# extraction_and_amplification <- left_join(extraction, amplification, by = c("extractionNumber" = "fk_extractionNumber"))
-# 
-# # save step as file for testing
-# # combinedTables <- data.frame(extraction_and_amplification)
-# # count(combinedTables)
-# # write.xlsx(combinedTables, 
-# #            file="./data/extraction_and_amplification.xlsx", 
-# #            sheetName = "extraction_&_amplification", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
-# # extractions have to be registered as events, so merge extraction_and_amplification with Event core table
-# extraction_and_amplification_to_Event_core <- right_join(location_and_waterSample_to_Event_core, 
-#                                                         extraction_and_amplification)
-# count(extraction_and_amplification_to_Event_core)
-# write.xlsx(combinedTables,
-#            file="./data/extraction_and_amplification_to_Event_core.xlsx",
-#            sheetName = "location-to-amplification", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
-# 
-# #-------------------------------------------------------
-# # 2b. mapping to GGBN Preparation Extension
-# #-------------------------------------------------------
-# 
-# 
-# #-------------------------------------------------------
-# # 2c. mapping to GGBN Amplification Extension
-# #-------------------------------------------------------
-# 
-# 
-# #-------------------------------------------------------
-# # 2d. mapping to MIxS Sample Extension
-# #-------------------------------------------------------
-# 
-# 
-# #-------------------------------------------------------
-# # 2e. mapping to Extended Measurement Or Facts Extention
-# #-------------------------------------------------------
-# 
-# 
+
+
+
+#=========================================================================
+# 2. Split into tables for the occurrence core and each core extension
+#=========================================================================
+
+
+#-------------------------------------------------------
+# 2a. Mapping to Occurrence Core
+#-------------------------------------------------------
+
+## TODO
+## - update this select() when field names are updated!
+coreOccurrenceTable <- select(flatDataMaster, 
+                              starts_with("locality."),
+                              starts_with("waterSample."),
+                              starts_with("extraction."),
+                              -starts_with("extraction.GGBN"),
+                              starts_with("occurrence."),
+                              -starts_with("occurrence.MIxS"),
+                              starts_with("sequence_ASV."),
+                              -starts_with("sequence_ASV.GGBN"))
+# table details
+tableSummary(coreOccurrenceTable)
+
+# save as rds
+saveRDS(coreOccurrenceTable,"./data/coreOccurrenceTable.rds")
+
+# save step as file for testing
+split_table <- data.frame(coreOccurrenceTable)
+write.xlsx(split_table,
+           file="./data/coreOccurrenceTable.xlsx",
+           sheetName = "coreOccurrenceTable", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+# Remove all tablename prefixes to allow auto mapping
+# Up to and inc "."
+colnames(coreOccurrenceTable) <- gsub("^.*?\\.", "", colnames(coreOccurrenceTable))
+tableSummary(coreOccurrenceTable)
+
+# save step as file for IPT
+split_table <- data.frame(coreOccurrenceTable)
+write.xlsx(split_table,
+           file="./data/IPT_coreOccurrenceTable.xlsx",
+           sheetName = "coreOccurrenceTable", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+# Ref
+# https://stackoverflow.com/questions/45960269/removing-suffix-from-column-names-using-rename-all
+# https://stackoverflow.com/questions/25991824/remove-all-characters-before-a-period-in-a-string
+
+  
+#-------------------------------------------------------
+# 2b. mapping to GGBN Preparation Extension
+#-------------------------------------------------------
+
+## TODO 
+## - Add eventID & parentEventID fields for linking.
+## - update this select() when field names are updated!
+#
+# Feedback from IPT when mapping:
+  # Extensions require an ID that links back to the core records.
+  # preparationType is required.
+  # preparationDate is required.
+
+ExtData_GGBN_Preparation <- select(flatDataMaster, 
+                              starts_with("extraction.GGBN-P:"))
+# table details
+tableSummary(ExtData_GGBN_Preparation)
+
+# save as rds
+saveRDS(ExtData_GGBN_Preparation,"./data/ExtData_GGBN_Preparation.rds")
+
+# save step as file for testing
+split_table <- data.frame(ExtData_GGBN_Preparation)
+write.xlsx(split_table,
+           file="./data/ExtData_GGBN_Preparation.xlsx",
+           sheetName = "ExtData_GGBN_Preparation", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+# Remove all tablename and extension name prefixes to allow auto mapping
+# Up to and inc ":"
+colnames(ExtData_GGBN_Preparation) <- gsub("^.*?\\:", "", colnames(ExtData_GGBN_Preparation))
+tableSummary(ExtData_GGBN_Preparation)
+
+# save step as file for IPT
+split_table <- data.frame(ExtData_GGBN_Preparation)
+write.xlsx(split_table,
+           file="./data/IPT_ExtData_GGBN_Preparation.xlsx",
+           sheetName = "ExtData_GGBN_Preparation", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+#-------------------------------------------------------
+# 2c. mapping to GGBN Amplification Extension
+#-------------------------------------------------------
+
+## TODO 
+## - Add eventID & parentEventID fields for linking.
+## - update this select() when field names are updated!
+ExtData_GGBN_Amplification <- select(flatDataMaster, 
+                                  starts_with("amplification.GGBN-A"),
+                                  starts_with("sequencing.GGBN-A"),
+                                  starts_with("sequence_ASV.GGBN-A"))
+# table details
+tableSummary(ExtData_GGBN_Amplification)
+
+# save as rds
+saveRDS(ExtData_GGBN_Amplification,"./data/ExtData_GGBN_Amplification.rds")
+
+# save step as file for testing
+split_table <- data.frame(ExtData_GGBN_Amplification)
+write.xlsx(split_table,
+           file="./data/ExtData_GGBN_Amplification.xlsx",
+           sheetName = "ExtData_GGBN_Amplification", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+# Remove all tablename and extension name prefixes to allow auto mapping
+# Up to and inc ":"
+colnames(ExtData_GGBN_Amplification) <- gsub("^.*?\\:", "", colnames(ExtData_GGBN_Amplification))
+tableSummary(ExtData_GGBN_Amplification)
+
+# save step as file for IPT
+split_table <- data.frame(ExtData_GGBN_Amplification)
+write.xlsx(split_table,
+           file="./data/IPT_ExtData_GGBN_Amplification.xlsx",
+           sheetName = "ExtData_GGBN_Amplification", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+#-------------------------------------------------------
+# 2d. mapping to MIxS Sample Extension
+#-------------------------------------------------------
+
+## TODO 
+## - Add eventID & parentEventID fields for linking.
+## - update this select() when field names are updated!
+ExtData_MIxS_Sample <- select(flatDataMaster,
+                              starts_with("sequencing.MIxS"),
+                              starts_with("occurrence.MIxS"))
+# table details
+tableSummary(ExtData_MIxS_Sample)
+
+# save as rds
+saveRDS(ExtData_MIxS_Sample,"./data/ExtData_MIxS_Sample.rds")
+
+# save step as file for testing
+split_table <- data.frame(ExtData_MIxS_Sample)
+write.xlsx(split_table,
+           file="./data/ExtData_MIxS_Sample.xlsx",
+           sheetName = "ExtData_MIxS_Sample", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+# Remove all tablename and extension name prefixes to allow auto mapping
+# Up to and inc ":"
+colnames(ExtData_MIxS_Sample) <- gsub("^.*?\\:", "", colnames(ExtData_MIxS_Sample))
+tableSummary(ExtData_MIxS_Sample)
+
+# save step as file for IPT
+split_table <- data.frame(ExtData_MIxS_Sample)
+write.xlsx(split_table,
+           file="./data/IPT_ExtData_MIxS_Sample.xlsx",
+           sheetName = "ExtData_MIxS_Sample", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+
+#-------------------------------------------------------
+# 2e. mapping to Extended Measurement Or Facts Extention
+#-------------------------------------------------------
+
+
