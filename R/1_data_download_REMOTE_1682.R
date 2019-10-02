@@ -42,6 +42,3 @@ saveRDS(sequence_ASV,"./data/sequence_ASV.rds")
 rm(list = ls())
 objects()
 
-
-##....##
-

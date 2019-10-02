@@ -42,6 +42,7 @@ saveRDS(sequence_ASV,"./data/sequence_ASV.rds")
 rm(list = ls())
 objects()
 
-
-##....##
-
+<<<<<<< HEAD
+#....
+=======
+>>>>>>> 2200fe009514643dd8aed8a062e571fd79214843
