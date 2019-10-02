@@ -188,6 +188,7 @@ flatDataMaster <- readRDS("./data/all_and_sequence_ASV.rds")
 ## TODO
 ## - update this select() when field names are updated!
 coreOccurrenceTable <- select(flatDataMaster, 
+                              "occurrenceID" = "occurrence.sequenceID",
                               starts_with("locality."),
                               starts_with("waterSample."),
                               starts_with("extraction."),
@@ -196,6 +197,7 @@ coreOccurrenceTable <- select(flatDataMaster,
                               -starts_with("occurrence.MIxS"),
                               starts_with("sequence_ASV."),
                               -starts_with("sequence_ASV.GGBN"))
+
 # table details
 tableSummary(coreOccurrenceTable)
 
@@ -238,7 +240,9 @@ write.xlsx(split_table,
   # preparationDate is required.
 
 ExtData_GGBN_Preparation <- select(flatDataMaster, 
-                              starts_with("extraction.GGBN-P:"))
+                              "occurrenceID" = "occurrence.sequenceID",
+                              starts_with("extraction.GGBN-P:"),
+                              "preparationDate" = "waterSample.eventDate")
 # table details
 tableSummary(ExtData_GGBN_Preparation)
 
@@ -270,10 +274,11 @@ write.xlsx(split_table,
 ## TODO 
 ## - Add eventID & parentEventID fields for linking.
 ## - update this select() when field names are updated!
-ExtData_GGBN_Amplification <- select(flatDataMaster, 
-                                  starts_with("amplification.GGBN-A"),
-                                  starts_with("sequencing.GGBN-A"),
-                                  starts_with("sequence_ASV.GGBN-A"))
+ExtData_GGBN_Amplification <- select(flatDataMaster,
+                                     "occurrenceID" = "occurrence.sequenceID",
+                                     starts_with("amplification.GGBN-A"),
+                                     starts_with("sequencing.GGBN-A"),
+                                     starts_with("sequence_ASV.GGBN-A"))
 # table details
 tableSummary(ExtData_GGBN_Amplification)
 
@@ -306,6 +311,7 @@ write.xlsx(split_table,
 ## - Add eventID & parentEventID fields for linking.
 ## - update this select() when field names are updated!
 ExtData_MIxS_Sample <- select(flatDataMaster,
+                              "occurrenceID" = "occurrence.sequenceID",
                               starts_with("sequencing.MIxS"),
                               starts_with("occurrence.MIxS"))
 # table details
@@ -336,4 +342,18 @@ write.xlsx(split_table,
 # 2e. mapping to Extended Measurement Or Facts Extention
 #-------------------------------------------------------
 
-#test edit.
+# Start with a simple example:
+# Cols:
+# measurementID
+# measurementType
+# measurementValue
+# 
+# measurementID = occurrenceID
+# measurementType =  "readName"
+# measurementValue = readName
+
+#see 
+# melt.data.frame {reshape2} etc
+# google, "r rearrange data use column name for name and value for value"
+# https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T1-GitHubVersionControl/VersionControl/
+
