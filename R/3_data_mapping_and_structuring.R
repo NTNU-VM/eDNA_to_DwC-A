@@ -67,9 +67,6 @@ write.xlsx(combinedTables,
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 
-## NEXT ##
-
-
 #-------------------------------------------------------
 # 1c.  Add amplification
 #-------------------------------------------------------
