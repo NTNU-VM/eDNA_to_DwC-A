@@ -142,8 +142,37 @@ write.xlsx(combined_tables,
 #-------------------------------------------------------
 # 1f.  Now save as master file for next steps
 #-------------------------------------------------------
+library(googledrive)
 
+# save in R format
 flatDataMaster <- readRDS("./data/all_and_sequence_ASV.rds")
+
+# Save as googlesheet - works but slow
+gs_new(title = "flatDataMaster", 
+       ws_title = "flatDataMaster",
+       input = flatDataMaster,
+       trim = TRUE)
+
+# Move the file created by gs_new (in google drive root) - works
+drive_mv("~/flatDataMaster", 
+         path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
+         overwrite = TRUE)
+
+# Alternatively, save as xlsx and then upload to googledrive
+combined_tables <- data.frame(flatDataMaster)
+excelFile <- write.xlsx(combined_tables,
+           file="./data/flatDataMaster.xlsx",
+           sheetName = "flatDataMaster", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
+# works - much faster than gs_new() and drive_mv
+# (drive_put() doesn't like rds files)
+drive_put("./data/flatDataMaster.xlsx", 
+          path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
+          name = "flatDataMaster",
+          type = "spreadsheet")
+
+
+
 
 ## NEXT: 
 ## Split main table into tables for each core/extension, and remove duplicate rows.
@@ -339,21 +368,74 @@ write.xlsx(split_table,
 
 
 #-------------------------------------------------------
-# 2e. mapping to Extended Measurement Or Facts Extention
+# 2e. mapping to (Extended?) Measurement Or Facts Extention
 #-------------------------------------------------------
 
-# Start with a simple example:
+library(reshape2)
+
 # Cols:
 # measurementID
 # measurementType
 # measurementValue
-# 
-# measurementID = occurrenceID
-# measurementType =  "readName"
-# measurementValue = readName
+
+
+# Select fields from master table
+ExtData_EMoF <- select(flatDataMaster,
+                       "occurrenceID" = "occurrence.sequenceID",
+                       "waterBodyID" = "locality.waterBodyID",
+                       "readName" = starts_with("occurrence.read"),
+                       "consensusSequence" = "sequence_ASV.GGBN-A:consensusSequence")
+
+# table details
+tableSummary(ExtData_EMoF)
+ExtData_EMoF
+
+# Rearrange value columns into type-vale pairs in two columns
+# ExtData_EMoF <- melt(ExtData_EMoF, 
+#                      id=c("occurrenceID"), 
+#                      measure=c("readName"),
+#                      variable.name="measurementType", 
+#                      value.name="measurementValue")
+ExtData_EMoF <- ExtData_EMoF %>% melt(id=c("occurrenceID"),
+                      measure=c("readName", "waterBodyID", "consensusSequence"),
+                      variable.name="measurementType",
+                      value.name="measurementValue") %>%
+  distinct() %>%
+  arrange(occurrenceID)
+
+# Remove all duplicate rows
+# ExtData_EMoF <- distinct(ExtData_EMoF)
+
+# Order by key field (just for checking)
+# ExtData_EMoF <- ExtData_EMoF[order(ExtData_EMoF$occurrenceID),]
+
+# table details
+tableSummary(ExtData_EMoF)
+ExtData_EMoF
+
+
+# save step as file for testing
+split_table <- data.frame(ExtData_EMoF)
+write.xlsx(split_table,
+           file="./data/IPT_ExtData_EMoF.xlsx",
+           sheetName = "IPT_ExtData_EMoF", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+
 
 #see 
 # melt.data.frame {reshape2} etc
 # google, "r rearrange data use column name for name and value for value"
 # https://aberdeenstudygroup.github.io/studyGroup/lessons/SG-T1-GitHubVersionControl/VersionControl/
+
+# as per this version:
+# Publishing Status
+# 2019-10-04 11:09:43
+# Publishing version #1.0 of resource ga-test-9 failed: 
+# Archive generation for resource ga-test-9 failed: Can't validate 
+# DwC-A for resource ga-test-9. Each line must have a occurrenceID, 
+# and each occurrenceID must be unique (please note comparisons are 
+# case insensitive)
+
+Publishing Status
+2019-10-04 12:01:04
+Publishing version #1.0 of resource ga-test-9 failed: Archive generation for resource ga-test-9 failed: Can't validate DwC-A for resource ga-test-9. Each line must have a occurrenceID, and each occurrenceID must be unique (please note comparisons are case insensitive)
 
