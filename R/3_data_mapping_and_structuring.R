@@ -1,8 +1,11 @@
 library(tidyverse)
 library(xlsx)
+library(uuid)
+
 
 source("R/1_data_download.R", local = TRUE)
 source("R/2_project_functions.R", local = TRUE)
+
 
 
 # Fetch the stored tables
@@ -144,19 +147,25 @@ write.xlsx(combined_tables,
 #-------------------------------------------------------
 library(googledrive)
 
+# Do checks on primary keys for duplicates
+# Generate uuids for eventID and parentEventIDs
+# UUIDgenerate()
+# UUIDgenerate(use.time = TRUE)
+
+
 # save in R format
 flatDataMaster <- readRDS("./data/all_and_sequence_ASV.rds")
 
-# Save as googlesheet - works but slow
-gs_new(title = "flatDataMaster", 
-       ws_title = "flatDataMaster",
-       input = flatDataMaster,
-       trim = TRUE)
+# # Save as googlesheet - works but slow
+# gs_new(title = "flatDataMaster", 
+#        ws_title = "flatDataMaster",
+#        input = flatDataMaster,
+#        trim = TRUE)
 
-# Move the file created by gs_new (in google drive root) - works
-drive_mv("~/flatDataMaster", 
-         path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
-         overwrite = TRUE)
+# # Move the file created by gs_new (in google drive root) - works
+# drive_mv("~/flatDataMaster", 
+#          path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
+#          overwrite = TRUE)
 
 # Alternatively, save as xlsx and then upload to googledrive
 combined_tables <- data.frame(flatDataMaster)
@@ -164,14 +173,15 @@ excelFile <- write.xlsx(combined_tables,
            file="./data/flatDataMaster.xlsx",
            sheetName = "flatDataMaster", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
-# works - much faster than gs_new() and drive_mv
+# works - much faster than gs_new() and drive_mv()
 # (drive_put() doesn't like rds files)
-drive_put("./data/flatDataMaster.xlsx", 
-          path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
-          name = "flatDataMaster",
-          type = "spreadsheet")
+newGoogleSheet <- drive_put("./data/flatDataMaster.xlsx", 
+                            path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
+                            name = "flatDataMaster",
+                            type = "spreadsheet")
 
-
+# Update the existing sheet
+newSheetKey <- gs_title("flatDataMaster")
 
 
 ## NEXT: 
@@ -435,7 +445,9 @@ write.xlsx(split_table,
 # and each occurrenceID must be unique (please note comparisons are 
 # case insensitive)
 
-Publishing Status
-2019-10-04 12:01:04
-Publishing version #1.0 of resource ga-test-9 failed: Archive generation for resource ga-test-9 failed: Can't validate DwC-A for resource ga-test-9. Each line must have a occurrenceID, and each occurrenceID must be unique (please note comparisons are case insensitive)
+# Publishing Status
+# 2019-10-04 12:01:04
+# Publishing version #1.0 of resource ga-test-9 failed: Archive generation for resource ga-test-9 failed: 
+# Can't validate DwC-A for resource ga-test-9. Each line must have a occurrenceID, and each occurrenceID 
+# must be unique (please note comparisons are case insensitive)
 
