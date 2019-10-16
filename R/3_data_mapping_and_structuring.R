@@ -26,6 +26,11 @@ colnames(sequencing) <- paste("sequencing", colnames(sequencing), sep = ".")
 colnames(occurrence) <- paste("occurrence", colnames(occurrence), sep = ".")
 colnames(sequence_ASV) <- paste("sequence_ASV", colnames(sequence_ASV), sep = ".")
 
+# TODO
+# Do checks on primary keys for duplicates
+# Generate uuids for eventID and parentEventIDs
+# UUIDgenerate()
+# UUIDgenerate(use.time = TRUE)
 
 #=========================================================================
 # 1. De-normalise all data into one table
@@ -60,13 +65,6 @@ tableSummary(extraction)
 
 all_and_extraction <- left_join(locality_waterSample, extraction,
                                 by = c("waterSample.waterSampleID" = "extraction.waterSampleID"))
-
-# # Try base merge method
-# all_and_extraction <- merge(x=locality_waterSample,
-#                             y=extraction,
-#                             by.x="waterSample.waterSampleID", 
-#                             by.y="extraction.waterSampleID",
-#                             all.x=TRUE)
 
 # Joined table stats
 tableSummary(all_and_extraction)
@@ -131,7 +129,6 @@ write.xlsx(combined_tables,
            sheetName = "Combined Sheets", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 
-
 #-------------------------------------------------------
 # 1f.  Add sequence_ASV
 #-------------------------------------------------------
@@ -158,34 +155,18 @@ write.xlsx(combined_tables,
 #-------------------------------------------------------
 library(googledrive)
 
-# Do checks on primary keys for duplicates
-# Generate uuids for eventID and parentEventIDs
-# UUIDgenerate()
-# UUIDgenerate(use.time = TRUE)
-
-
 # save in R format
 flatDataMaster <- readRDS("./data/all_and_sequence_ASV.rds")
 
-# # Save as googlesheet - works but slow
-# gs_new(title = "flatDataMaster", 
-#        ws_title = "flatDataMaster",
-#        input = flatDataMaster,
-#        trim = TRUE)
-
-# # Move the file created by gs_new (in google drive root) - works
-# drive_mv("~/flatDataMaster", 
-#          path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
-#          overwrite = TRUE)
-
-# Alternatively, save as xlsx and then upload to googledrive
+# Save as xlsx
 combined_tables <- data.frame(flatDataMaster)
 excelFile <- write.xlsx(combined_tables,
            file="./data/flatDataMaster.xlsx",
            sheetName = "flatDataMaster", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
-# # works - much faster than gs_new() and drive_mv()
-# # (drive_put() doesn't like rds files)
+# Upload Excel to googledrive (faster than direct to googlesheets)
+# - much faster than gs_new() and drive_mv()
+# - (drive_put() doesn't like rds files)
 # newGoogleSheet <- drive_put("./data/flatDataMaster.xlsx", 
 #                             path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
 #                             name = "flatDataMaster",
@@ -194,7 +175,7 @@ excelFile <- write.xlsx(combined_tables,
 # # try registering a dir
 # dataDir <- gs_key("1wslv45CYXM7wKGm1mf5C03fszUFHeQzT")
 # 
-# # Update the existing sheet
+# # Update the existing sheet (to allow a sheet with analytics (like the Cardinality sheet))
 # newSpreadsheet <- gs_title("flatDataMaster")
 # # list worksheets (tabs)
 # gs_ws_ls(newSpreadsheet)
