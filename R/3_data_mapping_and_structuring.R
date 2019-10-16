@@ -7,7 +7,6 @@ source("R/1_data_download.R", local = TRUE)
 source("R/2_project_functions.R", local = TRUE)
 
 
-
 # Fetch the stored tables
 locality <- readRDS("./data/locality.rds")
 waterSample <- readRDS("./data/waterSample.rds")
@@ -16,6 +15,7 @@ amplification <- readRDS("./data/amplification.rds")
 sequencing <- readRDS("./data/sequencing.rds")
 occurrence <- readRDS("./data/occurrence.rds")
 sequence_ASV <- readRDS("./data/sequence_ASV.rds")
+
 
 # Prefix all column names with table names to avoid clashes.
 colnames(locality) <- paste("locality", colnames(locality), sep = ".")
@@ -35,7 +35,7 @@ colnames(sequence_ASV) <- paste("sequence_ASV", colnames(sequence_ASV), sep = ".
 # 1a.  Add locality to waterSample
 #-------------------------------------------------------
 
-# Pre-join table stats
+# Pre-joined table stats
 tableSummary(locality)
 tableSummary(waterSample)
 
@@ -55,11 +55,19 @@ write.xlsx(combined_tables, file="./data/1_locality_waterSample.xlsx",
 #-------------------------------------------------------
 # 1b.  Add extraction
 #-------------------------------------------------------
-# Pre-join table stats
+# Pre-joined table stats
 tableSummary(extraction)
 
-all_and_extraction <- left_join(locality_waterSample, extraction, 
+all_and_extraction <- left_join(locality_waterSample, extraction,
                                 by = c("waterSample.waterSampleID" = "extraction.waterSampleID"))
+
+# # Try base merge method
+# all_and_extraction <- merge(x=locality_waterSample,
+#                             y=extraction,
+#                             by.x="waterSample.waterSampleID", 
+#                             by.y="extraction.waterSampleID",
+#                             all.x=TRUE)
+
 # Joined table stats
 tableSummary(all_and_extraction)
 
@@ -73,11 +81,11 @@ write.xlsx(combinedTables,
 #-------------------------------------------------------
 # 1c.  Add amplification
 #-------------------------------------------------------
-# Pre-join table stats
+# Pre-joined table stats
 tableSummary(amplification)
 
 all_and_amplification <- left_join(all_and_extraction, amplification,
-                                   by = c("waterSample.waterSampleID" = "amplification.waterSampleID"))
+                                   by = c("extraction.extractionID" = "amplification.extractionID"))
 # Joined table stats
 tableSummary(all_and_amplification)
 
@@ -90,11 +98,12 @@ write.xlsx(combined_tables,
 #-------------------------------------------------------
 # 1d.  Add sequencing
 #-------------------------------------------------------
-# Pre-join table stats
+# Pre-joined table stats
 tableSummary(sequencing)
 
 all_and_sequencing <- left_join(all_and_amplification, sequencing,
                                 by = c("amplification.sequencingID" = "sequencing.sequencingID"))
+
 # Joined table stats
 tableSummary(all_and_sequencing)
 
@@ -107,11 +116,12 @@ write.xlsx(combined_tables,
 #-------------------------------------------------------
 # 1e.  Add occurrence
 #-------------------------------------------------------
-# Pre-join table stats
+# Pre-joined table stats
 tableSummary(occurrence)
 
 all_and_occurrence <- left_join(all_and_sequencing, occurrence,
                                 by = c("amplification.sequencingID" = "occurrence.sequencingID"))
+
 # Joined table stats
 tableSummary(all_and_occurrence)
 
@@ -123,13 +133,14 @@ write.xlsx(combined_tables,
 
 
 #-------------------------------------------------------
-# 1e.  Add sequence_ASV
+# 1f.  Add sequence_ASV
 #-------------------------------------------------------
-# Pre-join table stats
+# Pre-joined table stats
 tableSummary(sequence_ASV)
 
 all_and_sequence_ASV <- left_join(all_and_occurrence, sequence_ASV,
                                   by = c("occurrence.sequenceID" = "sequence_ASV.sequenceID"))
+
 # Joined table stats
 tableSummary(all_and_sequence_ASV)
 
@@ -143,7 +154,7 @@ write.xlsx(combined_tables,
 
 
 #-------------------------------------------------------
-# 1f.  Now save as master file for next steps
+# 1g.  Now save as master file for next steps
 #-------------------------------------------------------
 library(googledrive)
 
@@ -173,20 +184,37 @@ excelFile <- write.xlsx(combined_tables,
            file="./data/flatDataMaster.xlsx",
            sheetName = "flatDataMaster", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
-# works - much faster than gs_new() and drive_mv()
-# (drive_put() doesn't like rds files)
-newGoogleSheet <- drive_put("./data/flatDataMaster.xlsx", 
-                            path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
-                            name = "flatDataMaster",
-                            type = "spreadsheet")
+# # works - much faster than gs_new() and drive_mv()
+# # (drive_put() doesn't like rds files)
+# newGoogleSheet <- drive_put("./data/flatDataMaster.xlsx", 
+#                             path = "~/NTNU INH stuff/eDNA_to_DwC-A/data/",
+#                             name = "flatDataMaster",
+#                             type = "spreadsheet")
 
-# Update the existing sheet
-newSheetKey <- gs_title("flatDataMaster")
+# # try registering a dir
+# dataDir <- gs_key("1wslv45CYXM7wKGm1mf5C03fszUFHeQzT")
+# 
+# # Update the existing sheet
+# newSpreadsheet <- gs_title("flatDataMaster")
+# # list worksheets (tabs)
+# gs_ws_ls(newSpreadsheet)
+# # add a worksheet to the spreadsheet
+# newWorksheet <- gs_ws_new(newSpreadsheet, ws_title = "SheetX", 
+#                           row_extent = 10, col_extent = 12,
+#                           verbose = TRUE)
+# # delete that new ws
+# gs_ws_delete(newWorksheet, "SheetX")
+# 
+# drive_deauth()
+# drive_auth()
+# drive_user()
+# public_file <- drive_get(as_id("1I-ZhYRuRkPN-1yEkw6btAQYoWQ_uWAZMuurU08ml1Rw"))
+# drive_download(public_file)
 
 
 ## NEXT: 
 ## Split main table into tables for each core/extension, and remove duplicate rows.
-## Extract fields which are to go into EMoFs.
+## Extract fields which are to go into MoFs.
 
 
 # ignore below for now..
@@ -195,11 +223,6 @@ newSheetKey <- gs_title("flatDataMaster")
 # see https://data.gbif.no/ipt-test/manage/resource?r=ga-test-7
 # Only one field (sampleNumber) left unmapped; sampleNumber is embedded as the 2nd element in fieldNumber.
 
-# Alternative join
-# merge(waterSample,locality, by = by.x = "locality", by.y = "locality",
-#       by.x = by, by.y = by, all = FALSE, all.x = all, all.y = all,
-#       sort = TRUE, suffixes = c(".x",".y"), no.dups = TRUE,
-#       incomparables = NULL, ...)
 
 
 
@@ -224,7 +247,7 @@ newSheetKey <- gs_title("flatDataMaster")
 # 2a. Mapping to Occurrence Core
 #-------------------------------------------------------
 
-## TODO
+## 
 ## - update this select() when field names are updated!
 coreOccurrenceTable <- select(flatDataMaster, 
                               "occurrenceID" = "occurrence.sequenceID",
@@ -249,9 +272,23 @@ write.xlsx(split_table,
            file="./data/coreOccurrenceTable.xlsx",
            sheetName = "coreOccurrenceTable", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
+# TODO 
+# - 50% of rows are duplicates at this point.
+# - Need to establish where the duplication occurs and change the join method..
+# Maybe where occurrence is merged in - going from more 
+
+## Remove all duplicate rows
+coreOccurrenceTable <- coreOccurrenceTable %>% distinct()
+
+# table details
+tableSummary(coreOccurrenceTable)
+
 # Remove all tablename prefixes to allow auto mapping
 # Up to and inc "."
 colnames(coreOccurrenceTable) <- gsub("^.*?\\.", "", colnames(coreOccurrenceTable))
+# Refs
+# https://stackoverflow.com/questions/45960269/removing-suffix-from-column-names-using-rename-all
+# https://stackoverflow.com/questions/25991824/remove-all-characters-before-a-period-in-a-string
 tableSummary(coreOccurrenceTable)
 
 # save step as file for IPT
@@ -260,11 +297,10 @@ write.xlsx(split_table,
            file="./data/IPT_coreOccurrenceTable.xlsx",
            sheetName = "coreOccurrenceTable", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
-# Ref
-# https://stackoverflow.com/questions/45960269/removing-suffix-from-column-names-using-rename-all
-# https://stackoverflow.com/questions/25991824/remove-all-characters-before-a-period-in-a-string
 
-  
+
+
+
 #-------------------------------------------------------
 # 2b. mapping to GGBN Preparation Extension
 #-------------------------------------------------------
@@ -282,6 +318,7 @@ ExtData_GGBN_Preparation <- select(flatDataMaster,
                               "occurrenceID" = "occurrence.sequenceID",
                               starts_with("extraction.GGBN-P:"),
                               "preparationDate" = "waterSample.eventDate")
+
 # table details
 tableSummary(ExtData_GGBN_Preparation)
 
@@ -318,6 +355,7 @@ ExtData_GGBN_Amplification <- select(flatDataMaster,
                                      starts_with("amplification.GGBN-A"),
                                      starts_with("sequencing.GGBN-A"),
                                      starts_with("sequence_ASV.GGBN-A"))
+
 # table details
 tableSummary(ExtData_GGBN_Amplification)
 
@@ -353,6 +391,7 @@ ExtData_MIxS_Sample <- select(flatDataMaster,
                               "occurrenceID" = "occurrence.sequenceID",
                               starts_with("sequencing.MIxS"),
                               starts_with("occurrence.MIxS"))
+
 # table details
 tableSummary(ExtData_MIxS_Sample)
 
@@ -378,7 +417,7 @@ write.xlsx(split_table,
 
 
 #-------------------------------------------------------
-# 2e. mapping to (Extended?) Measurement Or Facts Extention
+# 2e. mapping to (Core/Extended) Measurement Or Facts Extention
 #-------------------------------------------------------
 
 library(reshape2)
@@ -390,23 +429,23 @@ library(reshape2)
 
 
 # Select fields from master table
-ExtData_EMoF <- select(flatDataMaster,
+ExtData_MoF <- select(flatDataMaster,
                        "occurrenceID" = "occurrence.sequenceID",
                        "waterBodyID" = "locality.waterBodyID",
                        "readName" = starts_with("occurrence.read"),
                        "consensusSequence" = "sequence_ASV.GGBN-A:consensusSequence")
 
 # table details
-tableSummary(ExtData_EMoF)
-ExtData_EMoF
+tableSummary(ExtData_MoF)
+ExtData_MoF
 
 # Rearrange value columns into type-vale pairs in two columns
-# ExtData_EMoF <- melt(ExtData_EMoF, 
+# ExtData_MoF <- melt(ExtData_MoF, 
 #                      id=c("occurrenceID"), 
 #                      measure=c("readName"),
 #                      variable.name="measurementType", 
 #                      value.name="measurementValue")
-ExtData_EMoF <- ExtData_EMoF %>% melt(id=c("occurrenceID"),
+ExtData_MoF <- ExtData_MoF %>% melt(id=c("occurrenceID"),
                       measure=c("readName", "waterBodyID", "consensusSequence"),
                       variable.name="measurementType",
                       value.name="measurementValue") %>%
@@ -414,21 +453,21 @@ ExtData_EMoF <- ExtData_EMoF %>% melt(id=c("occurrenceID"),
   arrange(occurrenceID)
 
 # Remove all duplicate rows
-# ExtData_EMoF <- distinct(ExtData_EMoF)
+# ExtData_MoF <- distinct(ExtData_MoF)
 
 # Order by key field (just for checking)
-# ExtData_EMoF <- ExtData_EMoF[order(ExtData_EMoF$occurrenceID),]
+# ExtData_MoF <- ExtData_MoF[order(ExtData_MoF$occurrenceID),]
 
 # table details
-tableSummary(ExtData_EMoF)
-ExtData_EMoF
+tableSummary(ExtData_MoF)
+ExtData_MoF
 
 
 # save step as file for testing
-split_table <- data.frame(ExtData_EMoF)
+split_table <- data.frame(ExtData_MoF)
 write.xlsx(split_table,
-           file="./data/IPT_ExtData_EMoF.xlsx",
-           sheetName = "IPT_ExtData_EMoF", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
+           file="./data/IPT_ExtData_MoF.xlsx",
+           sheetName = "IPT_ExtData_MoF", col.names=TRUE, row.names=FALSE, showNA=FALSE, append = FALSE)
 
 
 #see 

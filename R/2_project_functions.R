@@ -9,24 +9,44 @@ tableSummary <- function(theTable, exclude, include){
   column_count = ncol(theTable)
   
   # Collect various row counts
-  row_count <- sapply(theTable, function(x) length(x))
-  value_count <- sapply(theTable, function(x) length(x[!is.na(x)]))
-  unique_values <- sapply(theTable, function(x) length(unique(x[!is.na(x)])))
-  NA_count <- sapply(theTable, function(x) length(x[is.na(x)]))
+  RowCount <- sapply(theTable, function(x) length(x))
+  ValueCount <- sapply(theTable, function(x) length(x[!is.na(x)]))
+  UniqueValues <- sapply(theTable, function(x) length(unique(x[!is.na(x)])))
+  NA_Count <- sapply(theTable, function(x) length(x[is.na(x)]))
   
   # Merge results and transpose
-  columnSummary <- rbind(row_count, value_count, NA_count, unique_values) %>% t
+  columnSummary <- rbind(RowCount, ValueCount, NA_Count, UniqueValues) %>% t
 
-  # Print as-is
+  # Get tablename string
   tableName <- trimws(deparse(substitute(theTable)), which="both")
   
-  # print(paste("Table: ",tableName,", Column count: ",column_count, sep=""), quote=FALSE)
-  cat(paste("Table: ",tableName,"\nColumn count: ",column_count, "\n", sep=""))
+  # Count number of duplicated rows
+  duplicates <- sum(duplicated(theTable), na.rm = TRUE)
+  
+  # Line for ease of reading
+  lineString <- "------------------------"
+  cat(paste("\n", lineString,
+            "\nTable: ",tableName,
+            "\nColumn count: ",column_count, 
+            "\nDuplicate row count: ",duplicates[1], 
+            "\n", sep=""))
+  
+  # Check for duplicate column names
+  theColNames <- colnames(theTable)
+  
+  # Get positions and count of duplicate colnames
+  dupIndices <- which(duplicated(theColNames))
+  dupCount <- length(dupIndices)
+  cat(paste("Duplicate column name count: ", dupCount, "\n", sep=""))
+
+  if(dupCount > 0){
+    # List the duplicate names
+    dupColNames <- paste(theColNames[dupIndices], collapse=", ")
+    cat(paste("Duplicate column names: ", dupColNames, ".\n", sep=""))
+  }
+  
+  cat("\n")
   print(columnSummary)
+  cat(lineString)
   
-  
-  # print as data frame
-  # columnSummary <- as.data.frame(columnSummary)
-  # print.data.frame(columnSummary, max = NULL)
-  #....
 }
