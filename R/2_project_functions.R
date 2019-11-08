@@ -1,5 +1,19 @@
+#=========================================================================
+# Functions script for spreadsheet-to-IPT pipeline prototype.
+# 
+# Download raw data from googlesheet
+# and separate into individual sheets.
+# 
+# Params
+#  theTable - the table or dataframe to be summarised
+#  exclude  - list of columns to include (currently unused)
+#  include  - list of columns to exclude (currently unused)
+#             Default = all columns.
+#=========================================================================
 
 # ---------------------------------------------------
+# tableSummary
+# 
 # Count all columns, rows, values, unique values and NAs for every column in a table.
 # Currently all columns.
 # ---------------------------------------------------
@@ -45,8 +59,37 @@ tableSummary <- function(theTable, exclude, include){
     cat(paste("Duplicate column names: ", dupColNames, ".\n", sep=""))
   }
   
-  cat("\n")
+  # cat("\n")
+  cat(paste("Column stats:", "\n"))
   print(columnSummary)
-  cat(lineString)
+  cat(paste(lineString, "\n"))
+  
+}
+
+
+# ---------------------------------------------------
+# saveAsExcel
+# 
+# Save table/dataframe to excel
+# 
+#   dir       - destination for new excel file
+#   tableName - name of new excel file
+#   theTable  - the table or dataframe to be converted
+# ---------------------------------------------------
+saveAsExcel <- function(dir, tableName, theTable){
+  
+  # cast to dataframe
+  tableToExcel <- data.frame(theTable)
+  
+  # set file name and path
+  newFilePath <- paste0(dir, tableName, ".xlsx")
+  
+  # save as excel
+  write.xlsx(tableToExcel, file = newFilePath,
+             sheetName = tableName, 
+             col.names = TRUE, 
+             row.names = FALSE, 
+             showNA = FALSE, 
+             append = FALSE)
   
 }
