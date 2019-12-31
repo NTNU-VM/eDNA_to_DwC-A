@@ -272,7 +272,10 @@ all_and_occurrence <- left_join(occurrence, all_and_sequencing,
 # Joined table stats
 tableSummary(all_and_occurrence)
 
-head(all_and_occurrence, n=50)
+# TODO -
+# Check how many instances of each occurrence are present..
+# all_and_occurrence <- all_and_occurrence[order("occurrence.occurrence_ID"),] 
+head(all_and_occurrence %>% select("occurrence.occurrence_ID"), 20)
 
 # tableToExcel <- data.frame(all_and_occurrence)
 if(outputStepsExcel){
