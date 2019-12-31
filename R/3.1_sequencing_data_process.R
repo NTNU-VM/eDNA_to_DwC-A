@@ -24,38 +24,38 @@ excelFile <- "./Anders_BFR2.otutab.xlsx"
 excel_sheets(excelFile)
 
 # Save tab as dataframe
-votutab_BFR2_swarms <- read_excel(excelFile, sheet = "votutab_BFR2.swarms")
+rawSequencingData <- read_excel(excelFile, sheet = "votutab_BFR2.swarms")
 
 #  Check the table is there...
-head(votutab_BFR2_swarms)
+head(rawSequencingData)
 
 # 1. Get info on the table (if available)
 if(exists("tableSummary")) {
-  tableSummary(votutab_BFR2_swarms)
+  tableSummary(rawSequencingData)
 }
 
 # Replace spaces (and other chars) in colnames with underscores, or remove
-names(votutab_BFR2_swarms) <- str_replace_all(names(votutab_BFR2_swarms), 
+names(rawSequencingData) <- str_replace_all(names(rawSequencingData), 
                                               c(" " = "_" , 
                                                 "," = "_" , 
                                                 "#" = "" ))
 
 # Remove rows with no species match
-votutab_BFR2_swarms <- filter(votutab_BFR2_swarms, Best_ID != "No match")
+rawSequencingData <- filter(rawSequencingData, Best_ID != "No match")
 
 #  Check table again
-head(votutab_BFR2_swarms)
+head(rawSequencingData)
 
 # 2. Get info on the table (if available)
 if(exists("tableSummary")) {
-  tableSummary(votutab_BFR2_swarms)
+  tableSummary(rawSequencingData)
 }
 
 # Select subset of columns here (for dev)
-# votutab_BFR2_swarms <- select(votutab_BFR2_swarms, c("MM1011", "MM1021", "MM1031", "OTU_ID", "Best_ID", "Match_1"))
+# rawSequencingData <- select(rawSequencingData, c("MM1011", "MM1021", "MM1031", "OTU_ID", "Best_ID", "Match_1"))
 
 # Transpose to view... hmmm no use
-# votutab_BFR2_swarms <- transpose(votutab_BFR2_swarms)
+# rawSequencingData <- transpose(rawSequencingData)
 
 
 # Assuming that each XL file represents a ...?
@@ -63,10 +63,10 @@ if(exists("tableSummary")) {
 # ASSUMING all are positioned before the OTU_ID column, they can be identified by index.
 
 # Get number of sample columns (= index of the right-most one)
-sampleColumnCount <- grep("^OTU_ID$", colnames(votutab_BFR2_swarms)) - 1
+sampleColumnCount <- grep("^OTU_ID$", colnames(rawSequencingData)) - 1
 
 # Get number of rows in dataset
-rowCount <- sapply(votutab_BFR2_swarms, function(x) length(x))
+rowCount <- sapply(rawSequencingData, function(x) length(x))
 
 # Create a new dataframe to take the transformed data.
 # transformedData
@@ -92,13 +92,13 @@ rowCounter <- 0
 for(i in 1:sampleColumnCount){
   
   # Get column (ie sample) name
-  colName <- colnames(votutab_BFR2_swarms)[i]
+  colName <- colnames(rawSequencingData)[i]
   
   # Loop through all the rows
-  for (row in 1:nrow(votutab_BFR2_swarms)) {
+  for (row in 1:nrow(rawSequencingData)) {
     
     # Number of times this OTU showed up in this sample
-    otuFrequency <- votutab_BFR2_swarms[row, colName]
+    otuFrequency <- rawSequencingData[row, colName]
     
     # If the OTU was found in this sample, then collect values for row in destination dataframe
     if(otuFrequency > 0){
@@ -107,10 +107,10 @@ for(i in 1:sampleColumnCount){
       rowCounter <- rowCounter + 1
       
       # Get the other values required for the new row (to be adjusted..)
-      otuID       <- votutab_BFR2_swarms[row, "OTU_ID"]
-      bestID      <- votutab_BFR2_swarms[row, "Best_ID"]
-      matchMax    <- votutab_BFR2_swarms[row, "Match_1"]
-      referenceDB <- votutab_BFR2_swarms[row, "Search_DB"]
+      otuID       <- rawSequencingData[row, "OTU_ID"]
+      bestID      <- rawSequencingData[row, "Best_ID"]
+      matchMax    <- rawSequencingData[row, "Match_1"]
+      referenceDB <- rawSequencingData[row, "Search_DB"]
       
       # Construct named vector to hold the new row content (a subset of columns for now..)
       # Fields which are not yet present in the excel sheet are just given string placeholders
@@ -127,7 +127,7 @@ for(i in 1:sampleColumnCount){
       #                   "identificationRemarks",	"MIxS:lib_size", "organismQuantity", 
       #                   "organismQuantityType", "readAbundanceDetails", "sop",	"basisOfRecord", "dc:type")
       
-      newRow = c("occurrence_ID"                    = otuID, 
+      newRow = c("occurrence_ID"                    = paste0(otuID, "_", colName)
                  "sequence_ASV_ID"                  = otuID, 
                  "sequencing_ID"                    = colName,
                  "readName"                         = otuID, 

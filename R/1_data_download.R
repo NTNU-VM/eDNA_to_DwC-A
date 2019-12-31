@@ -8,20 +8,44 @@
 library(googlesheets)
 library(readxl)
 
-# For raw data files
-dir.create("./data/raw",showWarnings = FALSE)
+#==================================================
+# User options
+#==================================================
 
-# register worksheet (GA - temp: the gs_key method below doesn't work for me)
-# eDNA_sheet <- gs_title("GBIF eDNA record format - modified")
-# eDNA_sheet <- gs_title("GBIF eDNA record v3 - mockup post-meeting")
-eDNA_sheet <- gs_title("GBIF eDNA record v3 - dummy data")
+# Select raw data file source
+#   1 - google sheet
+#   2 - local excel file
+fileSource <- 2
 
-# register worksheet (worksheet is public, but key needed)
-# eDNA_sheet <- gs_key("1uVWOxjJZo0v4uS5L6h8F-1sV5zNs7L_v7g1pSE_o8mY")
-
-# Download entire Google Sheet as xlsx, create folder /data if necessary
+# Excel file path.
 dataFile <- "./data/raw/eDNA_Data.xlsx"
-gs_download(eDNA_sheet, NULL, dataFile, TRUE, TRUE)
+
+#==================================================
+
+# Create dir for raw data files
+dir.create("./data/raw", showWarnings = FALSE)
+
+# Get google sheet
+if(fileSource == 1) {
+  
+  # register worksheet (GA - temp: the gs_key method below doesn't work for me)
+  # eDNA_sheet <- gs_title("GBIF eDNA record format - modified")
+  # eDNA_sheet <- gs_title("GBIF eDNA record v3 - mockup post-meeting")
+  # eDNA_sheet <- gs_title("GBIF eDNA record v3 - dummy data")
+  eDNA_sheet <- gs_title("GBIF eDNA record format")
+  
+  # register worksheet (worksheet is public, but key needed)
+  # eDNA_sheet <- gs_key("1uVWOxjJZo0v4uS5L6h8F-1sV5zNs7L_v7g1pSE_o8mY")
+  
+  # Download entire Google Sheet as xlsx, create folder /data if necessary
+  # dataFile <- excelFilePath
+  # Load google sheet into excel format
+  gs_download(eDNA_sheet, NULL, dataFile, TRUE, TRUE)
+  
+} else {
+  # use the local excel file
+}
+
 
 # List all sheets (tabs) in the spreadsheet (for checking)
 excel_sheets(dataFile)
@@ -45,6 +69,6 @@ saveRDS(occurrence,"./data/raw/occurrence.rds")
 saveRDS(sequence_ASV,"./data/raw/sequence_ASV.rds")
 
 ## For testing only- remove
-rm(list = ls())
-objects()
+# rm(list = ls())
+# objects()
 

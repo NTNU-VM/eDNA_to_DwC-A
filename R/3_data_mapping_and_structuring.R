@@ -1,5 +1,12 @@
 #=========================================================================
 # Main script for spreadsheet-to-IPT pipeline prototype.
+# Updated to correspond with updated MIxS extension: 
+#   http://rs.gbif.org/sandbox/extension/mixs_sample_2019_10_04.xml
+# which is included in this version of the data model (10/12/019):
+#   GBIF eDNA mappings v3.2:
+#   https://docs.google.com/spreadsheets/d/1paJ20-bLQ0OdQBEsj0BzoX32mgcZVvZh85pqglu9MN0/edit#gid=1428619335
+#   "GBIF eDNA record format":
+#   https://docs.google.com/spreadsheets/d/1uVWOxjJZo0v4uS5L6h8F-1sV5zNs7L_v7g1pSE_o8mY/edit#gid=534272466
 # 
 # Input requirements:
 # One worksheet with spreadsheets named as follows:
@@ -19,16 +26,26 @@
 #   IPT_ExtData_MIxS_Sample.xlsx
 #   IPT_ExtData_MoF.xlsx
 # 
-# Output files located in: ./data/output/
+# Output file location: ./data/output/
 #=========================================================================
 
 library(tidyverse)
 library(xlsx)
 library(uuid)
 
-
 source("R/1_data_download.R", local = TRUE)
 source("R/2_project_functions.R", local = TRUE)
+
+#==================================================
+# User options
+#==================================================
+#
+# Output as excel after each table join
+outputStepsExcel <- FALSE
+
+#==================================================
+
+
 
 # For output during process: for testing
 dir.create("./data/process",showWarnings=FALSE)
@@ -46,6 +63,28 @@ sequencing <- readRDS("./data/raw/sequencing.rds")
 occurrence <- readRDS("./data/raw/occurrence.rds")
 sequence_ASV <- readRDS("./data/raw/sequence_ASV.rds")
 
+# Possible future method-
+# Create a lookup table with columns for:
+#   1. table names
+#   2. original column names with extension prefixes (as imported)
+#   3. extensions only (inserting default strings for core fields)
+#   4. cleaned column names (stripped of all and any prefixes)
+# This allows changes to extension prefixes without having to alter the joins below.
+# Can also be repurposed later to allow extensions to be defined here, 
+# instead of as prefixes in data tables (a pain in the arse).
+# 
+# Create lookup table for column names and prefixes
+# colNameLookup <
+# 
+# # Store column names and prefixes
+# colNameLookup("locality")
+# colNameLookup("waterSample")
+# colNameLookup("extraction")
+# colNameLookup("amplification")
+# colNameLookup("sequencing")
+# colNameLookup("occurrence")
+# colNameLookup("sequence_ASV")
+
 
 # Prefix all column names with table names to avoid clashes.
 colnames(locality) <- paste("locality", colnames(locality), sep = ".")
@@ -57,10 +96,10 @@ colnames(occurrence) <- paste("occurrence", colnames(occurrence), sep = ".")
 colnames(sequence_ASV) <- paste("sequence_ASV", colnames(sequence_ASV), sep = ".")
 
 # TODO
-# Do checks on primary keys for duplicates
-# Generate uuids for eventID and parentEventIDs -DONE
-# UUIDgenerate()
-# UUIDgenerate(use.time = TRUE)
+# - Do checks on primary keys for duplicates
+# - Generate uuids for eventID and parentEventIDs -DONE
+# - UUIDgenerate() or UUIDgenerate(use.time = TRUE) ...
+# - Develop persistence for UUIDs when a dataset is refreshed or re-imported with updates.
 
 #=========================================================================
 # 0. Generate UUIDs for GBIF's ID columns where needed
@@ -72,12 +111,12 @@ colnames(sequence_ASV) <- paste("sequence_ASV", colnames(sequence_ASV), sep = ".
 # 0a.  Generate UUIDs for eventID and parentEventID in waterSample and extraction tables
 #-------------------------------------------------------
 
-# Table info (relevant cols only, for full colnames)
+# Table info (relevant cols only, to show full colnames)
 head(waterSample %>% select(1:3,5,6))
 head(extraction %>% select(1:4,6))
 tableSummary(waterSample)
 tableSummary(extraction)
-
+  
 # Generate waterSample.eventIDs
 for(i in 1:length(waterSample$waterSample.eventID)){
   waterSample$waterSample.eventID[i] <- UUIDgenerate()
@@ -89,9 +128,9 @@ for(i in 1:length(extraction$extraction.eventID)){
 }
 
 # Get extraction.parentEventIDs
-# Use the natural P and F keys (waterSampleID) to select waterSample.eventID values.
+# Use the natural P and F keys (waterSample_ID) to select waterSample.eventID values.
 extraction$extraction.parentEventID[
-  extraction$extraction.waterSampleID == waterSample$waterSample.waterSampleID
+  extraction$extraction.waterSample_ID == waterSample$waterSample.waterSample_ID
   ] = waterSample$waterSample.eventID
 
 
@@ -108,11 +147,11 @@ for(i in 1:length(waterSample$waterSample.materialSampleID)){
 # TODO - need to know if these are really the same as the waterSample.materialSampleIDs (A) or 
 # independent (B), ie if they are subsamples of water samples...
 
-# Comment installas appropriate:
+# Comment as appropriate:
 
 # A. If extraction.materialSampleIDs are inherited from waterSample.materialSampleIDs, then:
 extraction$extraction.materialSampleID[
-  extraction$extraction.waterSampleID == waterSample$waterSample.waterSampleID
+  extraction$extraction.waterSample_ID == waterSample$waterSample.waterSample_ID
   ] = waterSample$waterSample.materialSampleID
 
 # or B. If extraction samples have their own IDs, then:
@@ -121,11 +160,12 @@ extraction$extraction.materialSampleID[
 # }
 
 
-# Table info (relevant cols only, for full colnames)
+# Table info  (relevant cols only, to show full colnames)
 head(waterSample %>% select(1:3,5,6))
 head(extraction %>% select(1:4,6))
 tableSummary(waterSample)
 tableSummary(extraction)
+
 
 #=========================================================================
 # 1. De-normalise all data into one table
@@ -141,14 +181,15 @@ tableSummary(waterSample)
 
 # stripped out duplicates from locality table to make this join work. Needs tweaked if likely to be duplicates.
 locality_waterSample <- left_join(waterSample,locality,
-                                  by = c("waterSample.localityID" = "locality.localityID"))
+                                  by = c("waterSample.locality_ID" = "locality.locality_ID"))
 
 # Joined table stats
 tableSummary(locality_waterSample)
 
 # save step as file for testing
-saveAsExcel(theTable = locality_waterSample, tableName="1_locality_waterSample", dir="./data/process/")
-  
+if(outputStepsExcel){
+  saveAsExcel(theTable = locality_waterSample, tableName="1_locality_waterSample", dir="./data/process/")
+}
 
 #-------------------------------------------------------
 # 1b.  Add extraction
@@ -157,14 +198,15 @@ saveAsExcel(theTable = locality_waterSample, tableName="1_locality_waterSample",
 tableSummary(extraction)
 
 all_and_extraction <- left_join(locality_waterSample, extraction,
-                                by = c("waterSample.waterSampleID" = "extraction.waterSampleID"))
+                                by = c("waterSample.waterSample_ID" = "extraction.waterSample_ID"))
 
 # Joined table stats
 tableSummary(all_and_extraction)
 
 # save step as file for testing
-saveAsExcel(theTable = all_and_extraction, tableName="2_all_and_extraction", dir="./data/process/")
-
+if(outputStepsExcel){
+  saveAsExcel(theTable = all_and_extraction, tableName="2_all_and_extraction", dir="./data/process/")
+}
 
 #-------------------------------------------------------
 # 1c.  Add amplification
@@ -173,13 +215,14 @@ saveAsExcel(theTable = all_and_extraction, tableName="2_all_and_extraction", dir
 tableSummary(amplification)
 
 all_and_amplification <- left_join(all_and_extraction, amplification,
-                                   by = c("extraction.extractionID" = "amplification.extractionID"))
+                                   by = c("extraction.extraction_ID" = "amplification.extraction_ID"))
 # Joined table stats
 tableSummary(all_and_amplification)
 
 # tableToExcel <- data.frame(all_and_amplification)
-saveAsExcel(theTable = all_and_amplification, tableName="3_all_and_amplification", dir="./data/process/")
-
+if(outputStepsExcel){
+  saveAsExcel(theTable = all_and_amplification, tableName="3_all_and_amplification", dir="./data/process/")
+}
 
 #-------------------------------------------------------
 # 1d.  Add sequencing
@@ -188,20 +231,15 @@ saveAsExcel(theTable = all_and_amplification, tableName="3_all_and_amplification
 tableSummary(sequencing)
 
 all_and_sequencing <- left_join(all_and_amplification, sequencing,
-                                by = c("amplification.sequencingID" = "sequencing.sequencingID"))
-# Result: 12 rows
-
-# Try right join
-# all_and_sequencing <- right_join(all_and_amplification, sequencing,
-#                                 by = c("amplification.sequencingID" = "sequencing.sequencingID"))
-# Result: 
+                                by = c("amplification.sequencing_ID" = "sequencing.sequencing_ID"))
 
 # Joined table stats
 tableSummary(all_and_sequencing)
 
 # tableToExcel <- data.frame(all_and_sequencing)
-saveAsExcel(theTable = all_and_sequencing, tableName="4_all_and_sequencing", dir="./data/process/")
-
+if(outputStepsExcel){
+  saveAsExcel(theTable = all_and_sequencing, tableName="4_all_and_sequencing", dir="./data/process/")
+}
 
 #-------------------------------------------------------
 # 1e.  Add occurrence
@@ -209,15 +247,37 @@ saveAsExcel(theTable = all_and_sequencing, tableName="4_all_and_sequencing", dir
 # Pre-joined table stats
 tableSummary(occurrence)
 
-all_and_occurrence <- left_join(all_and_sequencing, occurrence,
-                                by = c("amplification.sequencingID" = "occurrence.sequencingID"))
+# Filter out all the "No match" occurrences
+
+
+# Includes all rows, irrespective of whether they result in an occurrence
+# all_and_occurrence <- left_join(all_and_sequencing, occurrence,
+#                                 by = c("amplification.sequencing_ID" = "occurrence.sequencing_ID"))
+
+# Only include rows which result in an occurrence
+all_and_occurrence <- left_join(occurrence, all_and_sequencing,
+                                by = c("occurrence.sequencing_ID" = "amplification.sequencing_ID"))
+# all_and_occurrence <- right_join(all_and_sequencing, occurrence,
+#                                 by = c("amplification.sequencing_ID" = "occurrence.sequencing_ID"))
+
+# all_and_occurrence <- semi_join(occurrence, all_and_sequencing, 
+#                                 by = c("occurrence.sequencing_ID" = "amplification.sequencing_ID"))
+
+# all_and_occurrence <- inner_join(all_and_sequencing, occurrence, 
+#                                  by = c("amplification.sequencing_ID" = "occurrence.sequencing_ID"))
+
+# all_and_occurrence <- inner_join(occurrence, all_and_sequencing, 
+#                                  by = c("occurrence.sequencing_ID" = "amplification.sequencing_ID"))
 
 # Joined table stats
 tableSummary(all_and_occurrence)
 
-# tableToExcel <- data.frame(all_and_occurrence)
-saveAsExcel(theTable = all_and_occurrence, tableName="5_all_and_occurrence", dir="./data/process/")
+head(all_and_occurrence, n=50)
 
+# tableToExcel <- data.frame(all_and_occurrence)
+if(outputStepsExcel){
+  saveAsExcel(theTable = all_and_occurrence, tableName="5_all_and_occurrence", dir="./data/process/")
+}
 
 #-------------------------------------------------------
 # 1f.  Add sequence_ASV
@@ -226,7 +286,7 @@ saveAsExcel(theTable = all_and_occurrence, tableName="5_all_and_occurrence", dir
 tableSummary(sequence_ASV)
 
 all_and_sequence_ASV <- left_join(all_and_occurrence, sequence_ASV,
-                                  by = c("occurrence.sequenceID" = "sequence_ASV.sequenceID"))
+                                  by = c("occurrence.sequence_ASV_ID" = "sequence_ASV.sequence_ASV_ID"))
 
 # Joined table stats
 tableSummary(all_and_sequence_ASV)
@@ -235,7 +295,9 @@ tableSummary(all_and_sequence_ASV)
 saveRDS(all_and_sequence_ASV,"./data/process/all_and_sequence_ASV.rds")
 
 # tableToExcel <- data.frame(all_and_sequence_ASV)
-saveAsExcel(theTable = all_and_sequence_ASV, tableName="6_all_and_sequence_ASV", dir="./data/process/")
+if(outputStepsExcel){
+  saveAsExcel(theTable = all_and_sequence_ASV, tableName="6_all_and_sequence_ASV", dir="./data/process/")
+}
 
 #-------------------------------------------------------
 # 1g.  Now save as master file for next steps
@@ -304,7 +366,7 @@ coreOccurrenceTable <- coreOccurrenceTable %>% distinct()
 # table details
 tableSummary(coreOccurrenceTable)
 
-# Remove all tablename prefixes to allow auto mapping
+# Remove all tablename prefixes to allow auto mapping in IPT
 # Up to and inc "."
 colnames(coreOccurrenceTable) <- gsub("^.*?\\.", "", colnames(coreOccurrenceTable))
 
@@ -338,7 +400,7 @@ saveRDS(ExtData_GGBN_Preparation,"./data/process/ExtData_GGBN_Preparation.rds")
 # save step as file for testing
 saveAsExcel(theTable = ExtData_GGBN_Preparation, tableName="ExtData_GGBN_Preparation", dir="./data/process/")
 
-# Remove all tablename and extension name prefixes to allow auto mapping
+# Remove all tablename and extension name prefixes to allow auto mapping in IPT
 # Up to and inc ":"
 colnames(ExtData_GGBN_Preparation) <- gsub("^.*?\\:", "", colnames(ExtData_GGBN_Preparation))
 tableSummary(ExtData_GGBN_Preparation)
@@ -369,7 +431,7 @@ saveRDS(ExtData_GGBN_Amplification,"./data/process/ExtData_GGBN_Amplification.rd
 # save step as file for testing
 saveAsExcel(theTable = ExtData_GGBN_Amplification, tableName="ExtData_GGBN_Amplification", dir="./data/process/")
 
-# Remove all tablename and extension name prefixes to allow auto mapping
+# Remove all tablename and extension name prefixes to allow auto mapping in IPT
 # Up to and inc ":"
 colnames(ExtData_GGBN_Amplification) <- gsub("^.*?\\:", "", colnames(ExtData_GGBN_Amplification))
 tableSummary(ExtData_GGBN_Amplification)
@@ -399,7 +461,7 @@ saveRDS(ExtData_MIxS_Sample,"./data/process/ExtData_MIxS_Sample.rds")
 # save step as file for testing
 saveAsExcel(theTable = ExtData_MIxS_Sample, tableName="ExtData_MIxS_Sample", dir="./data/process/")
 
-# Remove all tablename and extension name prefixes to allow auto mapping
+# Remove all tablename and extension name prefixes to allow auto mapping in IPT
 # Up to and inc ":"
 colnames(ExtData_MIxS_Sample) <- gsub("^.*?\\:", "", colnames(ExtData_MIxS_Sample))
 tableSummary(ExtData_MIxS_Sample)
@@ -442,7 +504,7 @@ library(reshape2)
 # Select fields from master table
 # This includes most entity IDs to show where the occurrences are coming from.
 ExtData_MoF <- select(flatDataMaster,
-                      "waterSampleID" = "waterSample.waterSampleID",
+                      "waterSample_ID" = "waterSample.waterSample_ID",
                       "extractionID" = "extraction.extractionID",
                       "amplificationNumber" = "amplification.amplificationNumber",
                       "sequencingID" = "amplification.sequencingID",

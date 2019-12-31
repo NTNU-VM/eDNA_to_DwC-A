@@ -38,7 +38,7 @@ tableSummary <- function(theTable, exclude, include){
   duplicates <- sum(duplicated(theTable), na.rm = TRUE)
   
   # Line for ease of reading
-  lineString <- "------------------------"
+  lineString <- "------------------------------------------------------------------------"
   cat(paste("\n", lineString,
             "\nTable: ",tableName,
             "\nColumn count: ",column_count, 
