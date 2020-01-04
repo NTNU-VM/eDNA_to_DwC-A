@@ -85,11 +85,19 @@ saveAsExcel <- function(dir, tableName, theTable){
   newFilePath <- paste0(dir, tableName, ".xlsx")
   
   # save as excel
-  write.xlsx(tableToExcel, file = newFilePath,
-             sheetName = tableName, 
-             col.names = TRUE, 
-             row.names = FALSE, 
-             showNA = FALSE, 
-             append = FALSE)
+  write.xlsx(tableToExcel,
+              file = newFilePath,
+              sheetName = tableName,
+              col.names = TRUE,
+              row.names = FALSE,
+              showNA = FALSE,
+              append = FALSE)
+  
+  # write.xlsx2(tableToExcel, 
+  #             file = newFilePath,
+  #             sheetName = tableName, 
+  #             col.names = TRUE, 
+  #             row.names = FALSE, 
+  #             append = FALSE)
   
 }

@@ -3,10 +3,15 @@
 # Updated to correspond with updated MIxS extension: 
 #   http://rs.gbif.org/sandbox/extension/mixs_sample_2019_10_04.xml
 # which is included in this version of the data model (10/12/019):
-#   GBIF eDNA mappings v3.2:
+#   "GBIF eDNA mappings v3.2":
 #   https://docs.google.com/spreadsheets/d/1paJ20-bLQ0OdQBEsj0BzoX32mgcZVvZh85pqglu9MN0/edit#gid=1428619335
 #   "GBIF eDNA record format":
 #   https://docs.google.com/spreadsheets/d/1uVWOxjJZo0v4uS5L6h8F-1sV5zNs7L_v7g1pSE_o8mY/edit#gid=534272466
+# 
+# 
+# This version joins tables from left to right as presented in the google sheet, "GBIF eDNA record format", above.
+# - this causes inefficiencies with some intermediate join steps becoming unnecessarily big.
+# TODO- re-arrange join order to eliminate unneeded rows earlier.
 # 
 # Input requirements:
 # One worksheet with spreadsheets named as follows:
@@ -32,6 +37,8 @@
 library(tidyverse)
 library(xlsx)
 library(uuid)
+library(sqldf)
+library(rjson)
 
 source("R/1_data_download.R", local = TRUE)
 source("R/2_project_functions.R", local = TRUE)
@@ -39,9 +46,14 @@ source("R/2_project_functions.R", local = TRUE)
 #==================================================
 # User options
 #==================================================
-#
+
 # Output as excel after each table join
 outputStepsExcel <- FALSE
+
+# Strip out occurrences listed as no match
+removeNoMatches <- TRUE
+matchColumn     <- as.name("occurrence.matchingScientificName") # can't get this to work. see below.
+noMatchString   <- "No match"
 
 #==================================================
 
@@ -169,6 +181,11 @@ tableSummary(extraction)
 
 #=========================================================================
 # 1. De-normalise all data into one table
+# 
+# TODO - 
+# reverse order:
+# start with occurrence and include only records which correspond to 
+# occurrences with scientific name matches.
 #=========================================================================
 
 #-------------------------------------------------------
@@ -230,11 +247,22 @@ if(outputStepsExcel){
 # Pre-joined table stats
 tableSummary(sequencing)
 
+# keep = TRUE doesn't seem to work..
 all_and_sequencing <- left_join(all_and_amplification, sequencing,
-                                by = c("amplification.sequencing_ID" = "sequencing.sequencing_ID"))
+                                by = c("amplification.sequencing_ID" = "sequencing.sequencing_ID"),
+                                keep = TRUE)
 
+# Alt sql
+# all_and_sequencing <- sqldf("SELECT *
+#                             FROM all_and_amplification
+#                             LEFT JOIN sequencing
+#                             ON amplification.sequencing_ID = sequencing.sequencing_ID")
+# all_and_sequencing <- sqldf("SELECT *
+#                             FROM all_and_amplification, sequencing
+#                             WHERE amplification.sequencing_ID = sequencing.sequencing_ID")
 # Joined table stats
 tableSummary(all_and_sequencing)
+# head(all_and_sequencing)
 
 # tableToExcel <- data.frame(all_and_sequencing)
 if(outputStepsExcel){
@@ -246,28 +274,30 @@ if(outputStepsExcel){
 #-------------------------------------------------------
 # Pre-joined table stats
 tableSummary(occurrence)
+head(occurrence)
 
-# Filter out all the "No match" occurrences
+# Remove all "No match" rows from occurrence.
+# These can be included for GBIF later, but for now, removing
+# them makes the dataset more manageable.
+occurrence <- occurrence %>% filter(!str_detect(occurrence.matchingScientificName, "No match"))
+# occurrence <- occurrence %>% filter(!str_detect(as.name(matchColumn), noMatchString))
+# occurrence <- occurrence %>% filter(!str_detect(matchColumn, noMatchString))
+
+tableSummary(occurrence)
+head(occurrence)
 
 
-# Includes all rows, irrespective of whether they result in an occurrence
+# Includes all rows, irrespective of whether they result in an occurrence - Unique sequencing IDs: 609 
 # all_and_occurrence <- left_join(all_and_sequencing, occurrence,
 #                                 by = c("amplification.sequencing_ID" = "occurrence.sequencing_ID"))
 
-# Only include rows which result in an occurrence
-all_and_occurrence <- left_join(occurrence, all_and_sequencing,
-                                by = c("occurrence.sequencing_ID" = "amplification.sequencing_ID"))
-# all_and_occurrence <- right_join(all_and_sequencing, occurrence,
-#                                 by = c("amplification.sequencing_ID" = "occurrence.sequencing_ID"))
-
-# all_and_occurrence <- semi_join(occurrence, all_and_sequencing, 
+# Only include rows which result in an occurrence - Unique sequencing IDs: 10
+# all_and_occurrence <- left_join(occurrence, all_and_sequencing,
 #                                 by = c("occurrence.sequencing_ID" = "amplification.sequencing_ID"))
 
-# all_and_occurrence <- inner_join(all_and_sequencing, occurrence, 
-#                                  by = c("amplification.sequencing_ID" = "occurrence.sequencing_ID"))
-
-# all_and_occurrence <- inner_join(occurrence, all_and_sequencing, 
-#                                  by = c("occurrence.sequencing_ID" = "amplification.sequencing_ID"))
+#  - Unique sequencing IDs: 
+all_and_occurrence <- right_join(all_and_sequencing, occurrence,
+                                by = c("amplification.sequencing_ID" = "occurrence.sequencing_ID"))
 
 # Joined table stats
 tableSummary(all_and_occurrence)
@@ -276,6 +306,51 @@ tableSummary(all_and_occurrence)
 # Check how many instances of each occurrence are present..
 # all_and_occurrence <- all_and_occurrence[order("occurrence.occurrence_ID"),] 
 head(all_and_occurrence %>% select("occurrence.occurrence_ID"), 20)
+
+sqldf("SELECT count(*) as 'Unique occurrence IDs', avg(count) as 'Av freq of occurrence IDs'
+      FROM
+      (
+        SELECT COUNT (*) AS Count
+        FROM all_and_occurrence
+        GROUP BY `occurrence.occurrence_ID`
+      ) as counts")
+
+# Show frequency of first few occurrence.occurrence_IDs
+sqldf("select `occurrence.occurrence_ID`, count(*) as 'count'
+      from all_and_occurrence
+      group by `occurrence.occurrence_ID`
+      order by `occurrence.occurrence_ID`
+      limit 10")
+
+# Show occurrence.occurrence_IDs which occur less or more than the modal frequency
+sqldf("SELECT *
+      FROM
+      (
+        SELECT `occurrence.occurrence_ID`, count(*) as 'count'
+            FROM all_and_occurrence
+            GROUP BY `occurrence.occurrence_ID`
+      )
+      WHERE 'count' <> 4")
+
+sqldf("SELECT count(*) as 'Unique amplification IDs', avg(count) as 'Av freq of amplification IDs'
+      FROM
+      (
+        SELECT COUNT (*) AS count
+        FROM all_and_occurrence
+        GROUP BY `amplification.amplification_ID`
+      ) as counts")
+
+# Count unique sequencing IDs
+# (Need to use amplification.sequencing_ID because sequencing.sequencing_ID has been dropped during the join)
+sqldf("SELECT count(*) as 'Unique sequencing IDs', avg(count) as 'Av freq of sequencing IDs'
+      FROM
+      (
+        SELECT COUNT (*) AS count
+        FROM all_and_occurrence
+        GROUP BY `amplification.sequencing_ID`
+      ) as counts")
+
+
 
 # tableToExcel <- data.frame(all_and_occurrence)
 if(outputStepsExcel){
@@ -305,7 +380,7 @@ if(outputStepsExcel){
 #-------------------------------------------------------
 # 1g.  Now save as master file for next steps
 #-------------------------------------------------------
-library(googledrive)
+# library(googledrive)
 
 # save in R format
 flatDataMaster <- readRDS("./data/process/all_and_sequence_ASV.rds")
@@ -322,8 +397,8 @@ saveAsExcel(theTable = flatDataMaster, tableName="flatDataMaster", dir="./data/p
 #   select(eventID,parentEventID,locality,eventDate,samplingProtocol)
 
 # To remove all "No match" rows.
-# matchingOccurrences <- occurrence %>% filter(!str_detect(matchingScientificName, "No match"))
-# #head(matchingOccurrences)
+# occurrence <- occurrence %>% filter(!str_detect(occurrence.matchingScientificName, "No match"))
+# head(matchingOccurrences)
 
 
 
@@ -558,3 +633,4 @@ saveAsExcel(theTable = ExtData_MoF, tableName="IPT_ExtData_MoF", dir="./data/out
 # 
 # END OF SCRIPT
 # 
+path.expand
