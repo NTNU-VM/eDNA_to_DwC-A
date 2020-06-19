@@ -36,9 +36,9 @@ if(exists("tableSummary")) {
 
 # Replace spaces (and other chars) in colnames with underscores, or remove
 names(rawSequencingData) <- str_replace_all(names(rawSequencingData), 
-                                              c(" " = "_" , 
-                                                "," = "_" , 
-                                                "#" = "" ))
+                                            c(" " = "_" , 
+                                              "," = "_" , 
+                                              "#" = "" ))
 
 # Remove rows with no species match
 rawSequencingData <- filter(rawSequencingData, Best_ID != "No match")

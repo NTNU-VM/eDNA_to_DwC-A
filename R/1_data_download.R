@@ -1,10 +1,14 @@
 #=========================================================================
 # Step 1 script for spreadsheet-to-IPT pipeline prototype.
+# - Run the main script, 3.
 # 
-# Download raw data from googlesheet
-# and separate into individual sheets.
+# Downloads raw data from googlesheet, in Excel format
+# separates individual sheets into dataframes and saves as .RDS files.
+# 
+# Downloaded data file location: ./data/raw/
 #=========================================================================
 
+# Packages
 library(googlesheets)
 library(readxl)
 
@@ -12,18 +16,19 @@ library(readxl)
 # User options
 #==================================================
 
-# Select raw data file source
-#   1 - google sheet
-#   2 - local excel file
+# Select raw data file source.
+# (Use option 1 on at least the first run).
+#   1 - Download google sheet.
+#   2 - Use local copy of last downloaded google sheet (in Excel format. Faster).
 fileSource <- 2
 
-# Excel file path.
+# Local data file path.
 dataFile <- "./data/raw/eDNA_Data.xlsx"
 
 #==================================================
 
 # Create dir for raw data files
-dir.create("./data/raw", showWarnings = FALSE)
+dir.create("./data/raw", showWarnings = TRUE)
 
 # Get google sheet
 if(fileSource == 1) {
@@ -43,7 +48,7 @@ if(fileSource == 1) {
   gs_download(eDNA_sheet, NULL, dataFile, TRUE, TRUE)
   
 } else {
-  # use the local excel file
+  # use the existing local excel file
 }
 
 
@@ -68,7 +73,7 @@ saveRDS(sequencing,"./data/raw/sequencing.rds")
 saveRDS(occurrence,"./data/raw/occurrence.rds")
 saveRDS(sequence_ASV,"./data/raw/sequence_ASV.rds")
 
-## For testing only- remove
+## For testing only - remove
 # rm(list = ls())
 # objects()
 

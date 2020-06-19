@@ -27,7 +27,7 @@ source("R/2_project_functions.R", local = TRUE)
 #==================================================
 
 # Set the source excel file path
-excelFile <- "./FinalMetazoaForGBIF.xlsx"
+excelFile <- "./data/source/FinalMetazoaForGBIF.xlsx"
 
 # Set marker column (last column before sample columns)
 markerColName <- "organismQuantityType"
@@ -72,9 +72,9 @@ if(showSteps && exists("tableSummary")) {
 
 # Replace spaces (and other chars) in colnames with underscores, or remove
 names(rawSequencingData) <- str_replace_all(names(rawSequencingData), 
-                                              c(" " = "_" , 
-                                                "," = "_" , 
-                                                "#" = "" ))
+                                            c(" " = "_" , 
+                                              "," = "_" , 
+                                              "#" = "" ))
 
 # Remove rows with no species match 
 # (Not used in this sheet format, but can be altered if required)
@@ -194,14 +194,14 @@ otuHitCount <- 0
 
 # Loop through the sample columns (by index, not name).
 for(i in firstSampleColIndex:lastSampleColIndex){
-
+  
   # Get column name (ie sample name)
   sampleColName <- colnames(rawSequencingData)[i]
   # cat(paste0("Col name:", sampleColName, "; index: ", i, "\n"))
   
   # Loop through all rows
   for (row in 1:nrow(rawSequencingData)) {
-
+    
     # Number of times this OTU showed up in this sample
     otuFrequency <- rawSequencingData[row, sampleColName]
     # cat(paste0("otuFrequency: ", otuFrequency, "\n"))
@@ -211,7 +211,7 @@ for(i in firstSampleColIndex:lastSampleColIndex){
       
       # Increment OTU hit count
       otuHitCount <- otuHitCount + 1
-
+      
       # Columns in raw dataset:
       # recordNumber
       # associatedSequences
@@ -248,7 +248,7 @@ for(i in firstSampleColIndex:lastSampleColIndex){
       identificationReferences <- rawSequencingData[row, "identificationReferences"]
       dateIdentified        <- rawSequencingData[row, "dateIdentified"]
       organismQuantityType  <- rawSequencingData[row, "organismQuantityType"]
-
+      
       # Construct named vector to hold the new row content.
       # New fields can be constructed here. Those without values yet can be given string placeholders
       # here to allow column creation.
@@ -285,7 +285,7 @@ for(i in firstSampleColIndex:lastSampleColIndex){
                   sampleColName,
                   otuFrequency,
                   recordNumber,
-
+                  
                   associatedSequences,
                   superkingdom,
                   kingdom,
@@ -309,7 +309,7 @@ for(i in firstSampleColIndex:lastSampleColIndex){
                          "sample_ID",
                          "otuFrequencyPerSample",
                          "recordNumber",
-
+                         
                          "associatedSequences",
                          "superkingdom",
                          "kingdom",
@@ -366,7 +366,7 @@ if(otuHitCount > 0){
   # - "Error in write.table(newDataFrame, file = "Markus_data_transformed_v2.csv",  : unimplemented type 'list' in 'EncodeElement'"
   # - have not solved this yet.
   # write.csv(newDataFrame, file = "Markus_data_transformed_v2.csv")
-
+  
   report <- paste0("OTU hit count (ie >0 frequency per sample) = ", otuHitCount, ".")
 } else {
   report <- "No transformed data to output. (OTU hit count = 0)."
@@ -383,5 +383,3 @@ writeLines(unlist(log.txt))
 cat(sep="", "\n", report, "\n")
 
 # END
-
-
