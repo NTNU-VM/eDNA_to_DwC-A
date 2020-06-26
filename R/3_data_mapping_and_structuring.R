@@ -195,7 +195,7 @@ tableSummary(extraction)
 # TODO - 
 # reverse order:
 # start with occurrence and include only records which correspond to 
-# occurrences with scientific name matches.
+# occurrences with scientific name matches. -DONE
 #=========================================================================
 
 
@@ -350,7 +350,7 @@ tableSummary(flatDataMaster)
 # - get av/max of each entity grouped by ocurrence_ID..........
 
 
-# SQL from Master:
+# SQL queries from Master (before this branch was copied over):
 
 head(flatDataMaster %>% select("occurrence.occurrence_ID"), 20)
 
@@ -434,8 +434,8 @@ saveAsExcel(theTable = flatDataMaster, tableName="flatDataMaster", dir="./data/p
 
 ## - update this select() when field names are updated!
 ## BEWARE! matches() doesn't return an exact match:
-## eg matches("locality.waterBody") returns both
-## locality.waterBody and locality.waterBodyID.
+##  eg matches("locality.waterBody") returns both
+##  locality.waterBody AND locality.waterBodyID.
 ## So best just to list column names (can be quoted/unquoted)
 coreOccurrenceTable <- select(flatDataMaster, 
                               locality.locationID,
@@ -595,7 +595,7 @@ saveAsExcel(theTable = ExtData_GGBN_Amplification, tableName="IPT_ExtData_GGBN_A
 
 ## TODO 
 ## - Add eventID & parentEventID fields for linking.
-## - update this select() when field names are updated!
+## - update this select() when field names are updated.
 
 ExtData_MIxS_Sample <- select(flatDataMaster,
                               "occurrence.occurrence_ID",
